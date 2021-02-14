@@ -5,4 +5,7 @@
 /lib
 /tmp
 /yarn.lock
+kousu.csv
+kousu.json
+ma.cookie
 node_modules

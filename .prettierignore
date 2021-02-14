@@ -1,0 +1,4 @@
+# npx prettier --write src/
+
+*.json
+src/logger.js
