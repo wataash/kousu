@@ -352,7 +352,12 @@ export async function run(run2: () => Promise<never>): Promise<never> {
     try {
       await run2();
     } catch (error) {
-      if (error.constructor.name != "ExitError") {
+      if (
+        !(
+          error.constructor.name == "ExitError" ||
+          error.constructor.name == "RequiredFlagError"
+        )
+      ) {
         logger.warn(`error.constructor.name: ${error.constructor.name}`);
       }
       if (error instanceof oclifErrors.CLIError) {
