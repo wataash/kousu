@@ -159,7 +159,7 @@ export const oclifFlagsPuppeteer = {
 export async function puppeteerBrowserPage(
   flgs: oclifParser.OutputFlags<typeof oclifFlags & typeof oclifFlagsPuppeteer>
 ): Promise<[puppeteer.Browser, puppeteer.Page]> {
-  logger.info("open chromium");
+  logger.debug("open chromium");
 
   const browser = await (async () => {
     if (flgs["puppeteer-connect-url"] !== undefined) {
@@ -232,7 +232,7 @@ export async function $x(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string
 ): Promise<puppeteer.ElementHandle[]> {
-  logger.debug(`$x(\`${expression}\`)`);
+  // logger.debug(`$x(\`${expression}\`)`);
   return await page.$x(expression);
 }
 
@@ -296,6 +296,7 @@ export async function run(run2: () => Promise<never>): Promise<never> {
       if (
         !(
           error.constructor.name == "ExitError" ||
+          error.constructor.name == "KousuError" ||
           error.constructor.name == "RequiredFlagError"
         )
       ) {

@@ -520,7 +520,7 @@ export function parseWeekJisseki(
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
-    logger.debug(`xpath.select(\`${expression}\`)`);
+    // logger.debug(`xpath.select(\`${expression}\`)`);
     return xpath.select(expression, node);
   };
 
