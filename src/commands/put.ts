@@ -71,12 +71,14 @@ export default class Get extends Command {
       // '  "10:00"' -> '10:00'
       const trim = (s: string) => {
         s = s.trim();
-        if (s.startsWith("\"") && s.endsWith("\"")) {
+        if (s.startsWith('"') && s.endsWith('"')) {
           return s.slice(1, -1);
         }
         return s;
       };
-      const csv = papaparse.parse(fs.readFileSync(flgs["in-csv"]).toString(), { header: true });
+      const csv = papaparse.parse(fs.readFileSync(flgs["in-csv"]).toString(), {
+        header: true,
+      });
       if (csv.meta.fields === undefined) {
         throw new KousuError("BUG: NOTREACHED", true);
       }
@@ -92,44 +94,46 @@ export default class Get extends Command {
 
       const headerLength = csv.meta.fields.length;
 
-      const jissekis = csv.data.map((row: any) => {
-        const row2 = { ...row }; // copy
-        if (Object.keys(row2).length !== headerLength) {
-          logger.debug("skip empty CSV line");
-          return null;
-        }
-        if (row2[mapFieldField.date] === undefined) {
-          throw new KousuError("invalid CSV: \"date\" missing");
-        }
-        const ret = {
-          date: trim(row2[mapFieldField.date]),
-          begin: trim(row2[mapFieldField.begin]),
-          end: trim(row2[mapFieldField.end]),
-          yokujitsu: trim(row2[mapFieldField.yokujitsu]) === "true",
-          kyukei: trim(row2[mapFieldField.kyukei]),
-          yasumi: trim(row2[mapFieldField.yasumi]),
-          sagyou: trim(row2[mapFieldField.sagyou]),
-          fumei: trim(row2[mapFieldField.fumei]),
-          jisseki: {}
-        } as Kinmu & Jisseki;
-        delete row2[mapFieldField.date];
-        delete row2[mapFieldField.begin];
-        delete row2[mapFieldField.end];
-        delete row2[mapFieldField.yokujitsu];
-        delete row2[mapFieldField.kyukei];
-        delete row2[mapFieldField.yasumi];
-        delete row2[mapFieldField.sagyou];
-        delete row2[mapFieldField.fumei];
-        const row3: { [projectId: string]: string } = row2;
-        for (const projectId of Object.keys(row3)) {
-          ret.jisseki[trim(projectId)] = trim(row3[projectId]);
-        }
-        return ret;
-      }).filter(jisseki => jisseki !== null);
+      const jissekis = csv.data
+        .map((row: any) => {
+          const row2 = { ...row }; // copy
+          if (Object.keys(row2).length !== headerLength) {
+            logger.debug("skip empty CSV line");
+            return null;
+          }
+          if (row2[mapFieldField.date] === undefined) {
+            throw new KousuError('invalid CSV: "date" missing');
+          }
+          const ret = {
+            date: trim(row2[mapFieldField.date]),
+            begin: trim(row2[mapFieldField.begin]),
+            end: trim(row2[mapFieldField.end]),
+            yokujitsu: trim(row2[mapFieldField.yokujitsu]) === "true",
+            kyukei: trim(row2[mapFieldField.kyukei]),
+            yasumi: trim(row2[mapFieldField.yasumi]),
+            sagyou: trim(row2[mapFieldField.sagyou]),
+            fumei: trim(row2[mapFieldField.fumei]),
+            jisseki: {},
+          } as Kinmu & Jisseki;
+          delete row2[mapFieldField.date];
+          delete row2[mapFieldField.begin];
+          delete row2[mapFieldField.end];
+          delete row2[mapFieldField.yokujitsu];
+          delete row2[mapFieldField.kyukei];
+          delete row2[mapFieldField.yasumi];
+          delete row2[mapFieldField.sagyou];
+          delete row2[mapFieldField.fumei];
+          const row3: { [projectId: string]: string } = row2;
+          for (const projectId of Object.keys(row3)) {
+            ret.jisseki[trim(projectId)] = trim(row3[projectId]);
+          }
+          return ret;
+        })
+        .filter((jisseki) => jisseki !== null);
 
       return {
         version: "",
-        projects: [] as unknown as { [projectId: string]: ProjectName },
+        projects: ([] as unknown) as { [projectId: string]: ProjectName },
         jissekis: jissekis,
       } as Kousu;
     })();
