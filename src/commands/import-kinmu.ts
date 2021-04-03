@@ -134,6 +134,7 @@ export default class MaKinmuImport extends Command {
       logger.debug("next");
     }
 
+    logger.debug("bye");
     this.exit(0);
   }
 

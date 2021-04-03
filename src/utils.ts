@@ -285,65 +285,6 @@ export async function sleepForever(): Promise<never> {
   }
 }
 
-export async function exitOrSleepForever(
-  promptCb: (timeoutSecs: number) => void,
-  exitCb: () => Promise<never>
-): Promise<never> {
-  // https://stackoverflow.com/questions/19687407/press-any-key-to-continue-in-nodejs
-  let restSecs = 10;
-  promptCb(restSecs);
-  logger.info(`press any key close immediately, or ctrl-C to leave it open...`);
-  let timeout: NodeJS.Timeout;
-
-  const exitPromise: Promise<"timed out" | "^C" | "exit"> = new Promise(
-    (resolve) => {
-      const _countDown = () => {
-        restSecs--;
-        process.stderr.write(`\r  \r${restSecs}`);
-        if (restSecs === 0) {
-          process.stderr.write("\n");
-          process.stdin.setRawMode(false);
-          // setRawMode(false) だけでも stdin.once() は実行されなくなるが、
-          // 一応listener自体も止めておく
-          process.stdin.pause();
-          resolve("timed out");
-          return;
-        }
-        timeout = setTimeout(_countDown, 1000);
-      };
-      process.stderr.write(`${restSecs}`);
-      timeout = setTimeout(_countDown, 1000);
-
-      process.stdin.setRawMode(true);
-      // TODO: カウントダウンに入る前の入力も受け取ってしまう
-      process.stdin.once("data", (data) => {
-        process.stderr.write("\n");
-        process.stdin.setRawMode(false);
-        // 既にタイムアウト済でもキャンセルしてくれるっぽい
-        clearTimeout(timeout);
-        const byteArray = [...data];
-        if (byteArray.length > 0 && byteArray[0] === 3) {
-          resolve("^C");
-          return;
-        }
-        resolve("exit");
-      });
-    }
-  );
-
-  const response = await exitPromise;
-  switch (response) {
-    case "exit":
-    case "timed out":
-      await exitCb();
-    case "^C":
-      logger.info("canceled; ctrl-C again to exit");
-      await sleepForever();
-  }
-
-  throw new KousuError("BUG: NOTREACHED", true);
-}
-
 export async function run(run2: () => Promise<never>): Promise<never> {
   types.setErrorLogCallback((s: string) => logger.error(s));
   types.setErrorLogStackCallback((s: string) => logger.errors(s));
@@ -360,28 +301,18 @@ export async function run(run2: () => Promise<never>): Promise<never> {
       ) {
         logger.warn(`error.constructor.name: ${error.constructor.name}`);
       }
-      if (error instanceof oclifErrors.CLIError) {
-        throw error;
-      }
-      if (!(error instanceof HttpError || error instanceof KousuError)) {
+      if (
+        !(
+          error instanceof HttpError ||
+          error instanceof KousuError ||
+          error instanceof oclifErrors.CLIError
+        )
+      ) {
         logger.error(
           `unexpected error: ${error.message}\nstack trace:\n${error.stack}`
         );
       }
-      await exitOrSleepForever(
-        (timeoutSecs) => {
-          logger.info(
-            `exit in ${timeoutSecs} seconds; press any key close immediately, or ctrl-C to leave it open...`
-          );
-        },
-        () => {
-          throw error;
-        }
-      );
-      throw new KousuError(
-        "BUG: NOTREACHED; forgot to call this.exit(0) in run2()?",
-        true
-      );
+      throw error;
     }
   })();
 
