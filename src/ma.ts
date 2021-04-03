@@ -62,7 +62,7 @@ async function waitLoadingGIF(
   kind: "appear" | "disappear",
   timeoutMs: number
 ): Promise<"success" | "error" | "timeout"> {
-  logger.debug(`wait loading GIF ${kind}...`);
+  // logger.debug(`wait loading GIF ${kind}...`);
   const waitMs = 100;
   for (let i = 0; i < timeoutMs / waitMs; i++) {
     // <!-- 通常時; loading GIF: disappear -->
@@ -113,18 +113,14 @@ async function waitLoadingGIF(
       return "error";
     }
     if (kind === "appear" && blockuiContent1.includes("display: block")) {
-      logger.debug("appears, return");
+      // logger.debug("appears, return");
       return "success";
     }
     if (kind === "disappear" && !blockuiContent1.includes("display: block")) {
-      logger.debug("disappears, return");
+      // logger.debug("disappears, return");
       return "success";
     }
-    logger.debug(
-      `wait ${waitMs}ms (timeout: ${
-        (timeoutMs - waitMs * (i - (i % 10))) / 1000
-      }s)`
-    );
+    // logger.debug(`wait ${waitMs}ms (timeout: ${(timeoutMs - waitMs * (i - (i % 10))) / 1000}s)`);
     await page.waitForTimeout(100);
   }
   logger.debug("timeout, return");
