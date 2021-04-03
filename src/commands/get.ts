@@ -64,16 +64,9 @@ export default class Get extends Command {
     );
     if (parseResult.flags["puppeteer-cookie-save"] !== undefined) {
       logger.info("cookie-save done;");
-      await utils.exitOrSleepForever(
-        (timeoutSecs) => {
-          logger.info(`exit in ${timeoutSecs} seconds`);
-        },
-        async () => {
-          await browser.close();
-          logger.debug("bye");
-          this.exit(0);
-        }
-      );
+      await browser.close();
+      logger.debug("bye");
+      this.exit(0);
     }
 
     await ma.selectYearMonth(page, year, month);
