@@ -3,7 +3,6 @@
 /* eslint-disable no-await-in-loop */
 
 import * as fs from "fs";
-import * as stringWidth from "string-width";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
@@ -30,15 +29,16 @@ export default class Get extends Command {
     ...utils.oclifFlags,
     ...utils.oclifFlagsPuppeteer,
 
-    "out-csv": oclifCommand.flags.string({
-      description:
-        "csvの出力パス; 指定しなければ標準出力 (environment variable: KOUSU_OUT_CSV)",
-      env: "KOUSU_OUT_CSV",
-    }),
     "out-json": oclifCommand.flags.string({
       description:
         "jsonの出力パス; 指定しなければ標準出力 (environment variable: KOUSU_OUT_JSON)",
       env: "KOUSU_OUT_JSON",
+    }),
+
+    // hidden
+    "out-csv": oclifCommand.flags.string({
+      hidden: true,
+      env: "KOUSU_OUT_CSV",
     }),
   };
 
@@ -51,6 +51,12 @@ export default class Get extends Command {
     const flgs = parseResult.flags;
     const year = this.year;
     const month = this.month;
+
+    if (flgs["out-csv"] !== undefined) {
+      throw new KousuError(
+        "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
+      );
+    }
 
     const [browser, page] = await utils.puppeteerBrowserPage(flgs);
 
@@ -160,62 +166,6 @@ export default class Get extends Command {
       logger.debug("next");
     }
 
-    // date,    begin, end,   yokujitsu, kyukei, yasumi, sagyou, fumei, "proj1 name", "proj2 name"
-    // 1/1(金), 00:00, 00:00, false,     0,      全休,   0.0,    ?,     0.0,          0.0
-    // 1/2(土), ...
-    const csv: string = (() => {
-      const projectIds = Object.keys(projects);
-      const csvData: string[][] = [
-        [
-          "date",
-          "begin",
-          "end",
-          "yokujitsu",
-          "kyukei",
-          "yasumi",
-          "sagyou",
-          "fumei",
-          ...projectIds.map((projectId) => projects[projectId]),
-        ].map((value) => `"${value.replace('"', '""')}"`),
-      ];
-      for (const kousu of kousus) {
-        let row: string[] = [
-          kousu.date,
-          kousu.begin,
-          kousu.end,
-          kousu.yokujitsu.toString(),
-          kousu.kyukei,
-          kousu.yasumi,
-          kousu.sagyou,
-          kousu.fumei,
-          ...projectIds.map((projectId) => kousu.jisseki[projectId]),
-        ];
-        row = row.map((value) => `"${value.replace('"', '""')}"`);
-        csvData.push(row);
-      }
-
-      const maxWidths: number[] = [];
-      for (const iCol of [...Array(csvData[0].length).keys()]) {
-        const maxWidth = Math.max(
-          ...csvData.map((row) => stringWidth(row[iCol]))
-        );
-        maxWidths.push(maxWidth);
-      }
-
-      let csv = "";
-      for (const row of csvData) {
-        for (const iCol of [...Array(row.length).keys()]) {
-          const col = row[iCol];
-          if (iCol === row.length - 1) {
-            csv += `${col}\n`;
-          } else {
-            csv += col + ", " + " ".repeat(maxWidths[iCol] - stringWidth(col)); // 2 for comma and space
-          }
-        }
-      }
-      return csv;
-    })();
-
     // {
     //   "version": "0.1.0",
     //   "projects": {
@@ -241,12 +191,6 @@ export default class Get extends Command {
   ]
  }
  `;
-
-    if (flgs["out-csv"] === undefined) {
-      process.stdout.write(csv);
-    } else {
-      fs.writeFileSync(flgs["out-csv"], csv);
-    }
 
     if (flgs["out-json"] === undefined) {
       process.stdout.write(json);
