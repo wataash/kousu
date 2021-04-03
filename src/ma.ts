@@ -2,7 +2,7 @@
 
 /* eslint-disable no-await-in-loop */
 
-import * as puppeteer from "puppeteer";
+import type * as puppeteer from "puppeteer";
 
 import { KousuError } from "./common";
 import * as utils from "./utils";
@@ -77,46 +77,46 @@ async function waitLoadingGIF(
     //   <!--   ^^^^^^^^^^^^^^^^^^^^^^                                                                                                                                                                ^^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
-    const blockui_content = await page.$x(
+    const blockuiContent = await page.$x(
       '//div[contains(@class, "ui-blockui-content")]'
     );
-    if (blockui_content.length !== 2) {
+    if (blockuiContent.length !== 2) {
       logger.warn(
-        `BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockui_content.length}`
+        `BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`
       );
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
     }
-    const blockui_content0 = await page.evaluate(
+    const blockuiContent0 = await page.evaluate(
       (el) => el.outerHTML,
-      blockui_content[0]
+      blockuiContent[0]
     ); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
-    const blockui_content1 = await page.evaluate(
+    const blockuiContent1 = await page.evaluate(
       (el) => el.outerHTML,
-      blockui_content[1]
+      blockuiContent[1]
     ); // <div id="workResultView:j_idt57" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 285.796px; top: 227.8px; z-index: 1007; display: block; opacity: 0.0103886;"><img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt=""></div>
-    if (!blockui_content0.includes("workResultView:j_idt50:j_idt51")) {
+    if (!blockuiContent0.includes("workResultView:j_idt50:j_idt51")) {
       logger.warn(
-        `BUG: workResultView:j_idt50:j_idt51 not found; found instead: ${blockui_content0}`
+        `BUG: workResultView:j_idt50:j_idt51 not found; found instead: ${blockuiContent0}`
       );
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
     }
-    if (!blockui_content1.includes("workResultView:j_idt57")) {
+    if (!blockuiContent1.includes("workResultView:j_idt57")) {
       logger.warn(
-        `BUG: workResultView:j_idt57 not found; found instead: ${blockui_content1}`
+        `BUG: workResultView:j_idt57 not found; found instead: ${blockuiContent1}`
       );
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
     }
-    if (kind === "appear" && blockui_content1.includes("display: block")) {
+    if (kind === "appear" && blockuiContent1.includes("display: block")) {
       logger.debug("appears, return");
       return "success";
     }
-    if (kind === "disappear" && !blockui_content1.includes("display: block")) {
+    if (kind === "disappear" && !blockuiContent1.includes("display: block")) {
       logger.debug("disappears, return");
       return "success";
     }

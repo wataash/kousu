@@ -4,7 +4,6 @@
 
 import { Command } from "@oclif/command";
 
-import { KousuError } from "../common";
 import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";

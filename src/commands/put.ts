@@ -8,7 +8,7 @@ import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
 import * as papaparse from "papaparse";
 
-import { Jisseki, Kinmu, Kousu, ProjectName } from "./get";
+import type { Jisseki, Kinmu, Kousu, ProjectName } from "./get";
 import { KousuError } from "../common";
 import * as ma from "../ma";
 import * as utils from "../utils";
