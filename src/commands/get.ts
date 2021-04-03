@@ -254,6 +254,7 @@ export default class Get extends Command {
       fs.writeFileSync(flgs["out-json"], json);
     }
 
+    logger.debug("bye");
     this.exit(0);
   }
 
