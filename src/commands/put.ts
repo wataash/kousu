@@ -140,6 +140,7 @@ export default class Get extends Command {
         );
       })();
 
+      let modified = false;
       for (const [iDate, date] of dates.entries()) {
         const jisseki = mapDateJisseki[date];
         if (jisseki === undefined) {
@@ -173,29 +174,41 @@ export default class Get extends Command {
           // await elem.evaluate((el) => {
           //   (el as HTMLElement).innerText = "9.9";
           // });
+          const txt = await elem.evaluate(
+            (el) => (el as HTMLElement).innerText
+          );
+          if (txt === timeJisseki) {
+            continue;
+          }
+          modified = true;
+          logger.info(
+            `${date} ${project} ${kousu.projects[project]} ${timeJisseki}`
+          );
           await elem.click();
           await page.keyboard.type(timeJisseki);
-          // loading GIFが出ないことがあるのでタイムアウトは短めにする
-          // await Promise.all([ma.waitLoading(page, 300), page.keyboard.press("Tab")]);
+          // Shift-Tab で値を確定・送信
+          // Shift-Tab でなく Tab だと右のセルが選択されるが、次のfor-iterationで上の txt が "" になる
           await Promise.all([
-            ma.waitLoading(page, 300),
+            ma.waitLoading(page),
+            page.keyboard.down("Shift"),
             page.keyboard.press("Tab"),
+            page.keyboard.up("Shift"),
           ]);
-          // TODO: 現在のvalueと比べて、変わっていなけば入力しない
-
           "breakpoint".match(/breakpoint/);
         }
         "breakpoint".match(/breakpoint/);
       }
 
-      // 保存
-      logger.debug("保存");
+      if (!modified) {
+        logger.debug("unchanged; skip 保存");
+        continue;
+      }
+      logger.info("保存");
       await Promise.all([
         ma.waitLoading(page),
         page.click("#workResultView\\:j_idt50\\:saveButton"),
       ]);
-
-      logger.debug("next");
+      "breakpoint".match(/breakpoint/);
     }
 
     logger.debug("bye");
