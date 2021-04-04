@@ -9,7 +9,7 @@ import * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
 
 import * as types from "./common";
-import { HttpError, KousuError } from "./common";
+import { KousuError } from "./common";
 import { ElementHandle } from "puppeteer";
 
 // @template:logger
@@ -302,11 +302,7 @@ export async function run(run2: () => Promise<never>): Promise<never> {
         logger.warn(`error.constructor.name: ${error.constructor.name}`);
       }
       if (
-        !(
-          error instanceof HttpError ||
-          error instanceof KousuError ||
-          error instanceof oclifErrors.CLIError
-        )
+        !(error instanceof KousuError || error instanceof oclifErrors.CLIError)
       ) {
         logger.error(
           `unexpected error: ${error.message}\nstack trace:\n${error.stack}`
