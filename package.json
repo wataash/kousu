@@ -1,7 +1,7 @@
 {
   "name": "kousu",
   "description": "todo description",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "author": "Wataru Ashihara @wataash",
   "bin": {
     "kousu": "./bin/run"
