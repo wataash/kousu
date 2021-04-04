@@ -1,16 +1,18 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/* eslint-disable no-warning-comments */
+
 import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import * as oclifErrors from "@oclif/errors";
 import type * as oclifParser from "@oclif/parser";
-import * as log4js from "log4js";
+import type * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
 
 import * as types from "./common";
 import { KousuError } from "./common";
-import { ElementHandle } from "puppeteer";
+import type { ElementHandle } from "puppeteer";
 
 // @template:logger
 process.env.LOG_PRETTY = "1";
@@ -156,14 +158,16 @@ export const oclifFlagsPuppeteer = {
 };
 
 // not sure oclifParser.OutputFlags is correct -- but seems to work
+//
+// [XXX:eslint-tuple]
 export async function puppeteerBrowserPage(
   flgs: oclifParser.OutputFlags<typeof oclifFlags & typeof oclifFlagsPuppeteer>
-): Promise<[puppeteer.Browser, puppeteer.Page]> {
+): Promise<any> /* Promise<[puppeteer.Browser, puppeteer.Page]> */ {
   logger.debug("open chromium");
 
   const browser = await (async () => {
     if (flgs["puppeteer-connect-url"] !== undefined) {
-      return await puppeteer.connect({
+      return puppeteer.connect({
         // ConnectOptions
         browserURL: "http://localhost:55592",
         // BrowserOptions
@@ -174,7 +178,7 @@ export async function puppeteerBrowserPage(
         // slowMo: 50, // for page.type
       });
     }
-    return await puppeteer.launch({
+    return puppeteer.launch({
       // LaunchOptions
       handleSIGINT: flgs["puppeteer-handle-sigint"],
       // ChromeArgOptions
@@ -213,6 +217,7 @@ export async function puppeteerCookieLoad(
   const cookies: puppeteer.SetCookie[] = JSON.parse(txt);
   for (const cookie of cookies) {
     logger.debug(`page.setCookie(): ${JSON.stringify(cookie)}`);
+    // eslint-disable-next-line no-await-in-loop
     await page.setCookie(cookie);
   }
 }
@@ -233,7 +238,7 @@ export async function $x(
   expression: string
 ): Promise<puppeteer.ElementHandle[]> {
   // logger.debug(`$x(\`${expression}\`)`);
-  return await page.$x(expression);
+  return page.$x(expression);
 }
 
 export async function $xn(
@@ -281,6 +286,7 @@ export async function sleepForever(): Promise<never> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
     // wakeup every 1 second for debugger to be able to break
+    // eslint-disable-next-line no-await-in-loop
     await sleep(1000);
   }
 }
@@ -295,9 +301,9 @@ export async function run(run2: () => Promise<never>): Promise<never> {
     } catch (error) {
       if (
         !(
-          error.constructor.name == "ExitError" ||
-          error.constructor.name == "KousuError" ||
-          error.constructor.name == "RequiredFlagError"
+          error.constructor.name === "ExitError" ||
+          error.constructor.name === "KousuError" ||
+          error.constructor.name === "RequiredFlagError"
         )
       ) {
         logger.warn(`error.constructor.name: ${error.constructor.name}`);

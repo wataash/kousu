@@ -1,13 +1,14 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /* eslint-disable no-await-in-loop */
+/* eslint-disable no-warning-comments */
 
 import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
 import * as jsdom from "jsdom";
-import * as puppeteer from "puppeteer";
+import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
 import * as xmldom from "xmldom";
 
@@ -58,7 +59,10 @@ export default class Get extends Command {
       );
     }
 
-    const [browser, page] = await utils.puppeteerBrowserPage(flgs);
+    // [XXX:eslint-tuple]
+    const tmp = await utils.puppeteerBrowserPage(flgs);
+    const browser = tmp[0] as puppeteer.Browser;
+    const page = tmp[1] as puppeteer.Page;
 
     await ma.login(
       page,
@@ -77,19 +81,19 @@ export default class Get extends Command {
 
     await ma.selectYearMonth(page, year, month);
 
-    {
-      date: "7/27(月)";
-      begin: "15:04";
-      end: "15:04";
-      yokujitsu: false;
-      kyukei: "0.0";
-      yasumi: "";
-      sagyou: "0.0";
-      fumei: "0.0";
-      jisseki: {
-        proj1: "0.0";
-      }
-    }
+    // {
+    //   date: "7/27(月)";
+    //   begin: "15:04";
+    //   end: "15:04";
+    //   yokujitsu: false;
+    //   kyukei: "0.0";
+    //   yasumi: "";
+    //   sagyou: "0.0";
+    //   fumei: "0.0";
+    //   jisseki: {
+    //     proj1: "0.0";
+    //   }
+    // }
     const kousus: (Kinmu & Jisseki)[] = [];
 
     const projects: { [projectId: string]: ProjectName } = {};
@@ -130,25 +134,27 @@ export default class Get extends Command {
         return kinmus;
       })();
 
-      const [jissekis, projects_] = await (async () => {
+      // [XXX:eslint-tuple]
+      const tmp = await (async () => {
         const elem = await utils.$x1(
           page,
           `//div[@id="workResultView:items"]`,
           "工数実績入力表の形式が不正です"
         );
         const html = await elem.evaluate((body) => body.outerHTML);
-        const [jissekis, projects_] = parseWeekJisseki(html);
-        return [jissekis, projects_];
+        return parseWeekJisseki(html);
       })();
+      const jissekis = tmp[0] as Jisseki[];
+      const projects_ = tmp[1] as { [projectId: string]: ProjectName };
 
-      if (kinmus.length != 7) {
+      if (kinmus.length !== 7) {
         logger.error(
-          `勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) != 7`
+          `勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`
         );
       }
-      if (jissekis.length != 7) {
+      if (jissekis.length !== 7) {
         logger.error(
-          `工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) != 7`
+          `工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`
         );
       }
       // TODO: projects_ が全ての週で一致するか確認
@@ -157,8 +163,6 @@ export default class Get extends Command {
         if (kinmu === null) {
           continue;
         }
-        // TS7053: bug?
-        // @ts-ignore
         kousus.push(Object.assign({}, kinmu, jissekis[i]));
       }
       Object.assign(projects, projects_);
@@ -202,9 +206,10 @@ export default class Get extends Command {
     this.exit(0);
   }
 
-  async run() /* : Promise<never> */ {
+  async run(): Promise<never> {
     await utils.run(this.run2.bind(this));
-    // NOTREACHED
+    // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
+    throw new KousuError("BUG: NOTREACHED", true);
   }
 }
 
@@ -252,15 +257,15 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
     );
   }
 
-  const datum_date: string[] = []; //                7/27(月) 7/28(火) 7/29(水) 7/30(木) 7/31(金) 8/1(土) 8/2(日)
-  const datum_begin: (string | null)[] = []; //      null     null     null     null     null     00:00   00:00
-  const datum_end: (string | null)[] = []; //        null     null     null     null     null     00:00   00:00
-  const datum_yokujitsu: (boolean | null)[] = []; // null     null     null     null     null     false   false
-  const datum_kyukei: (string | null)[] = []; //     null     null     null     null     null     0.0     0.0
-  const datum_yasumi: (string | null)[] = []; //     null     null     null     null     null     全休    全休
+  const datumDate: string[] = []; //                7/27(月) 7/28(火) 7/29(水) 7/30(木) 7/31(金) 8/1(土) 8/2(日)
+  const datumBegin: (string | null)[] = []; //      null     null     null     null     null     00:00   00:00
+  const datumEnd: (string | null)[] = []; //        null     null     null     null     null     00:00   00:00
+  const datumYokujitsu: (boolean | null)[] = []; // null     null     null     null     null     false   false
+  const datumKyukei: (string | null)[] = []; //     null     null     null     null     null     0.0     0.0
+  const datumYasumi: (string | null)[] = []; //     null     null     null     null     null     全休    全休
   // -> [{"date":"8/1(土)", "begin":"09:00", "end":"17:30", "yokujitu":false, "kyukei": "0.0", "yasumi":""|"全休"|"午前"|"午後"}]
 
-  const check_tds = (
+  const checkTds = (
     row: number,
     tds: NodeListOf<HTMLElementTagNameMap["td"]>,
     text0: string
@@ -279,13 +284,13 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
     }
   };
 
-  // trs[0]: datum_date
+  // trs[0]: datumDate
   {
     const row = 1;
     const kind = "日付";
     const tds = trs[0].querySelectorAll("td");
     // debug: tds[6].innerHTML
-    check_tds(row, tds, "");
+    checkTds(row, tds, "");
     for (let i = 1; i < tds.length; i++) {
       const txt = tds[i].textContent;
       if (txt === null) {
@@ -301,20 +306,20 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
           true
         );
       }
-      datum_date.push(match[0]);
+      datumDate.push(match[0]);
     }
   }
 
-  // trs[1]: datum_begin
+  // trs[1]: datumBegin
   {
     const row = 2;
     const kind = "出社";
     const tds = trs[1].querySelectorAll("td");
-    check_tds(row, tds, kind);
+    checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
       const input = tds[i].querySelector("input");
       if (input === null) {
-        datum_begin.push(null);
+        datumBegin.push(null);
         continue;
       }
       const value = input.getAttribute("value"); // "00:00"
@@ -324,20 +329,20 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
           true
         );
       }
-      datum_begin.push(value);
+      datumBegin.push(value);
     }
   }
 
-  // trs[2]: datum_end
+  // trs[2]: datumEnd
   {
     const row = 3;
     const kind = "退社";
     const tds = trs[2].querySelectorAll("td");
-    check_tds(row, tds, kind);
+    checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
       const input = tds[i].querySelector("input");
       if (input === null) {
-        datum_end.push(null);
+        datumEnd.push(null);
         continue;
       }
       const value = input.getAttribute("value"); // "00:00"
@@ -347,43 +352,43 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
           true
         );
       }
-      datum_end.push(value);
+      datumEnd.push(value);
     }
   }
 
-  // trs[3]: datum_yokujitsu
+  // trs[3]: datumYokujitsu
   {
     const row = 4;
     const kind = "翌日";
     const tds = trs[3].querySelectorAll("td");
-    check_tds(row, tds, kind);
+    checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
       const input = tds[i].querySelector("input");
       if (input === null) {
-        datum_yokujitsu.push(null);
+        datumYokujitsu.push(null);
         continue;
       }
-      const aria_checked = input.getAttribute("aria-checked");
-      if (aria_checked !== "true" && aria_checked !== "false") {
+      const ariaChecked = input.getAttribute("aria-checked");
+      if (ariaChecked !== "true" && ariaChecked !== "false") {
         throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${aria_checked})`,
+          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`,
           true
         );
       }
-      datum_yokujitsu.push(aria_checked === "true");
+      datumYokujitsu.push(ariaChecked === "true");
     }
   }
 
-  // trs[4]: datum_kyukei
+  // trs[4]: datumKyukei
   {
     const row = 5;
     const kind = "休憩";
     const tds = trs[4].querySelectorAll("td");
-    check_tds(row, tds, kind);
+    checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
       const input = tds[i].querySelector("input");
       if (input === null) {
-        datum_kyukei.push(null);
+        datumKyukei.push(null);
         continue;
       }
       const value = input.getAttribute("value");
@@ -393,20 +398,20 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
           true
         );
       }
-      datum_kyukei.push(value);
+      datumKyukei.push(value);
     }
   }
 
-  // trs[5]: datum_yasumi
+  // trs[5]: datumYasumi
   {
     const row = 6;
     const kind = "休み";
     const tds = trs[5].querySelectorAll("td");
-    check_tds(row, tds, kind);
+    checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
       const option = tds[i].querySelector('option[selected="selected"]');
       if (option === null) {
-        datum_yasumi.push(null);
+        datumYasumi.push(null);
         continue;
       }
       const text = option.textContent;
@@ -421,29 +426,29 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
           true
         );
       }
-      datum_yasumi.push(text);
+      datumYasumi.push(text);
     }
   }
 
   const ret: (Kinmu | null)[] = [];
-  for (let i = 0; i < datum_date.length; i++) {
+  for (let i = 0; i < datumDate.length; i++) {
     if (
-      datum_begin[i] === null ||
-      datum_end[i] === null ||
-      datum_yokujitsu[i] === null ||
-      datum_kyukei[i] === null ||
-      datum_yasumi[i] === null
+      datumBegin[i] === null ||
+      datumEnd[i] === null ||
+      datumYokujitsu[i] === null ||
+      datumKyukei[i] === null ||
+      datumYasumi[i] === null
     ) {
       ret.push(null);
       continue;
     }
     ret.push({
-      date: datum_date[i],
-      begin: datum_begin[i] as string,
-      end: datum_end[i] as string,
-      yokujitsu: datum_yokujitsu[i] as boolean,
-      kyukei: datum_kyukei[i] as string,
-      yasumi: datum_yasumi[i] as "" | "全休" | "午前" | "午後",
+      date: datumDate[i],
+      begin: datumBegin[i] as string,
+      end: datumEnd[i] as string,
+      yokujitsu: datumYokujitsu[i] as boolean,
+      kyukei: datumKyukei[i] as string,
+      yasumi: datumYasumi[i] as "" | "全休" | "午前" | "午後",
     });
   }
 
@@ -453,9 +458,14 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 // -----------------------------------------------------------------------------
 // 工数実績入力表パース
 
+// [XXX:eslint-tuple]: tuple type breaks eslint
+// https://github.com/typescript-eslint/typescript-eslint/issues/2098
+// $ npx eslint src/commands/get.ts
+// /home/wsh/qjs/tesjs/proj/kousu/src/commands/get.ts
+//   0:0  error  Parsing error: Cannot read property 'map' of undefined
 export function parseWeekJisseki(
   html: string
-): [Jisseki[], { [projectId: string]: ProjectName }] {
+): any /* [Jisseki[], { [projectId: string]: ProjectName }] */ {
   const jissekis: Jisseki[] = [];
   const projects: { [projectId: string]: ProjectName } = {};
 
@@ -562,24 +572,24 @@ export function parseWeekJisseki(
   assertText(`//tr[4]/th[5]/span[2]/text()`, thead, "名称");
 
   // textContent: contains empty columns
-  // const times_sagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map((elem) => elem.textContent);
+  // const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map((elem) => elem.textContent);
 
-  const times_sagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map(
+  const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map(
     (elem) => elem.textContent
   ) as string[];
-  const times_fumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map(
+  const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map(
     (elem) => elem.textContent
   ) as string[];
-  times_sagyou.shift();
-  times_sagyou.shift();
-  times_sagyou.shift();
-  times_sagyou.shift();
-  times_sagyou.shift(); // "作業時間"
-  times_fumei.shift();
-  times_fumei.shift();
-  times_fumei.shift();
-  times_fumei.shift();
-  times_fumei.shift(); // "不明時間"
+  timesSagyou.shift();
+  timesSagyou.shift();
+  timesSagyou.shift();
+  timesSagyou.shift();
+  timesSagyou.shift(); // "作業時間"
+  timesFumei.shift();
+  timesFumei.shift();
+  timesFumei.shift();
+  timesFumei.shift();
+  timesFumei.shift(); // "不明時間"
 
   const dates = (x(`tr[4]/th/span[2]`, thead) as Element[]).map(
     (elem) => elem.textContent as string
@@ -593,19 +603,19 @@ export function parseWeekJisseki(
   // という形式で使いづらいので捨てる
 
   for (const [name, var_] of [
-    ["times_sagyou", times_sagyou],
-    ["times_fumei", times_fumei],
+    ["timesSagyou", timesSagyou],
+    ["timesFumei", timesFumei],
     ["dates", dates],
   ]) {
-    if (var_.length != 7) {
-      logger.error(`${errMsg}: ${name}.length (${var_.length}) != 7`);
+    if (var_.length !== 7) {
+      logger.error(`${errMsg}: ${name}.length (${var_.length}) !== 7`);
     }
   }
 
-  const project_ids = (x(`tr/td[4]/div/span`, tbody) as Element[]).map(
+  const projectIds = (x(`tr/td[4]/div/span`, tbody) as Element[]).map(
     (elem) => elem.textContent as string
   );
-  const project_names = (x(`tr/td[5]/div/span`, tbody) as Element[]).map(
+  const projectNames = (x(`tr/td[5]/div/span`, tbody) as Element[]).map(
     (elem) => elem.textContent as string
   );
 
@@ -633,9 +643,9 @@ export function parseWeekJisseki(
     (elem) => elem.textContent as string
   );
 
-  logger.debug(`number of projects: ${project_ids.length}`);
+  logger.debug(`number of projects: ${projectIds.length}`);
   for (const [name, var_] of [
-    ["project_names", project_names],
+    ["projectNames", projectNames],
     ["kousus0", kousus0],
     ["kousus1", kousus1],
     ["kousus2", kousus2],
@@ -644,57 +654,57 @@ export function parseWeekJisseki(
     ["kousus5", kousus5],
     ["kousus6", kousus6],
   ]) {
-    if (var_.length != project_ids.length) {
+    if (var_.length !== projectIds.length) {
       logger.error(
-        `${errMsg}: ${name}.length (${var_.length}) != project_ids.length (${project_ids.length})`
+        `${errMsg}: ${name}.length (${var_.length}) !== projectIds.length (${projectIds.length})`
       );
     }
   }
 
   jissekis.push({
-    sagyou: times_sagyou[0],
-    fumei: times_fumei[0],
+    sagyou: timesSagyou[0],
+    fumei: timesFumei[0],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[1],
-    fumei: times_fumei[1],
+    sagyou: timesSagyou[1],
+    fumei: timesFumei[1],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[2],
-    fumei: times_fumei[2],
+    sagyou: timesSagyou[2],
+    fumei: timesFumei[2],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[3],
-    fumei: times_fumei[3],
+    sagyou: timesSagyou[3],
+    fumei: timesFumei[3],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[4],
-    fumei: times_fumei[4],
+    sagyou: timesSagyou[4],
+    fumei: timesFumei[4],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[5],
-    fumei: times_fumei[5],
+    sagyou: timesSagyou[5],
+    fumei: timesFumei[5],
     jisseki: {},
   });
   jissekis.push({
-    sagyou: times_sagyou[6],
-    fumei: times_fumei[6],
+    sagyou: timesSagyou[6],
+    fumei: timesFumei[6],
     jisseki: {},
   });
-  for (const [i, project_id] of project_ids.entries()) {
-    projects[project_id] = project_names[i];
-    jissekis[0].jisseki[project_id] = kousus0[i];
-    jissekis[1].jisseki[project_id] = kousus1[i];
-    jissekis[2].jisseki[project_id] = kousus2[i];
-    jissekis[3].jisseki[project_id] = kousus3[i];
-    jissekis[4].jisseki[project_id] = kousus4[i];
-    jissekis[5].jisseki[project_id] = kousus5[i];
-    jissekis[6].jisseki[project_id] = kousus6[i];
+  for (const [i, projectId] of projectIds.entries()) {
+    projects[projectId] = projectNames[i];
+    jissekis[0].jisseki[projectId] = kousus0[i];
+    jissekis[1].jisseki[projectId] = kousus1[i];
+    jissekis[2].jisseki[projectId] = kousus2[i];
+    jissekis[3].jisseki[projectId] = kousus3[i];
+    jissekis[4].jisseki[projectId] = kousus4[i];
+    jissekis[5].jisseki[projectId] = kousus5[i];
+    jissekis[6].jisseki[projectId] = kousus6[i];
   }
 
   return [jissekis, projects];

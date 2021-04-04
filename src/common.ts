@@ -12,10 +12,10 @@ let logCb: (s: string) => void = (_s: string) => {
 let logStackCb: (s: string) => void = (_s: string) => {
   // nop
 };
-export function setErrorLogCallback(cb: (s: string) => void) {
+export function setErrorLogCallback(cb: (s: string) => void): void {
   logCb = cb;
 }
-export function setErrorLogStackCallback(cb: (s: string) => void) {
+export function setErrorLogStackCallback(cb: (s: string) => void): void {
   logStackCb = cb;
 }
 

@@ -6,6 +6,7 @@ import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
+import type * as puppeteer from "puppeteer";
 
 import type { Jisseki, Kinmu, Kousu, ProjectName } from "./get";
 import { KousuError } from "../common";
@@ -73,7 +74,10 @@ export default class Get extends Command {
       return acc;
     }, {} as { [date: string]: typeof kousu.jissekis[number] });
 
-    const [browser, page] = await utils.puppeteerBrowserPage(flgs);
+    // [XXX:eslint-tuple]
+    const tmp = await utils.puppeteerBrowserPage(flgs);
+    const browser = tmp[0] as puppeteer.Browser;
+    const page = tmp[1] as puppeteer.Page;
 
     await ma.login(
       page,
@@ -198,8 +202,9 @@ export default class Get extends Command {
     this.exit(0);
   }
 
-  async run() /* : Promise<never> */ {
+  async run(): Promise<never> {
     await utils.run(this.run2.bind(this));
-    // NOTREACHED
+    // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
+    throw new KousuError("BUG: NOTREACHED", true);
   }
 }

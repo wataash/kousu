@@ -1,6 +1,7 @@
 // SPDX-License-Identifier: Apache-2.0
 
 /* eslint-disable no-await-in-loop */
+/* eslint-disable no-warning-comments */
 
 import type * as puppeteer from "puppeteer";
 
@@ -130,7 +131,10 @@ async function waitLoadingGIF(
 // ページ遷移は page.waitForNavigation() で拾えないので、読み込みGIFが現れて消え
 // るのを検出することにする
 // XXX: 30s はてきとう
-export async function waitLoading(page: puppeteer.Page, waitGIFMs = 30_000) {
+export async function waitLoading(
+  page: puppeteer.Page,
+  waitGIFMs = 30_000
+): Promise<void> {
   const resultAppaer = await waitLoadingGIF(page, "appear", waitGIFMs);
   if (resultAppaer === "timeout") {
     return;
