@@ -260,7 +260,7 @@ export default class Get extends Command {
       // 保存
       logger.debug("保存");
       await Promise.all([
-        ma.waitLoading(page, 300),
+        ma.waitLoading(page),
         page.click("#workResultView\\:j_idt50\\:saveButton"),
       ]);
 
