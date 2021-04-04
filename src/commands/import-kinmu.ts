@@ -3,7 +3,9 @@
 /* eslint-disable no-await-in-loop */
 
 import { Command } from "@oclif/command";
+import type * as puppeteer from "puppeteer";
 
+import { KousuError } from "../common";
 import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";
@@ -32,7 +34,10 @@ export default class MaKinmuImport extends Command {
     const year = this.year;
     const month = this.month;
 
-    const [browser, page] = await utils.puppeteerBrowserPage(flgs);
+    // [XXX:eslint-tuple]
+    const tmp = await utils.puppeteerBrowserPage(flgs);
+    const browser = tmp[0] as puppeteer.Browser;
+    const page = tmp[1] as puppeteer.Page;
 
     await ma.login(
       page,
@@ -137,8 +142,9 @@ export default class MaKinmuImport extends Command {
     this.exit(0);
   }
 
-  async run() /* : Promise<never> */ {
+  async run(): Promise<never> {
     await utils.run(this.run2.bind(this));
-    // NOTREACHED
+    // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
+    throw new KousuError("BUG: NOTREACHED", true);
   }
 }
