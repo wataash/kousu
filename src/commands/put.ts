@@ -61,11 +61,22 @@ export default class Get extends Command {
       const j = JSON.parse(
         fs.readFileSync(flgs["in-json"]).toString()
       ) as Kousu;
-      if (j.version !== "0.1.0") {
-        throw new KousuError(
-          `invalid JSON: "version": expected "0.1.0", actual "${j.version}"`
-        );
+      const e = (msg: string) => {
+        throw new KousuError(`invalid JSON: ${msg}`)
       }
+      // TODO: more strict check with quicktype
+      if (j.version === undefined)
+        e(`"version" not defined, must be "0.1.0"`);
+      if (j.version !== "0.1.0")
+        e(`"version" must be "0.1.0"`);
+      if (j.projects === undefined)
+        e(`"projects" not defined, must be object ({"project": "projectName"})`);
+      if (!utils.isObject(j.projects))
+        e(`"projects" must be object ({"project": "projectName"})`);
+      if (j.jissekis === undefined)
+        e(`"jissekis" not defined, must be array`);
+      if (!Array.isArray(j.jissekis))
+        e(`"projects" must be array`);
       return j;
     })();
 

@@ -274,6 +274,11 @@ export async function $x1(
 // -------------------------------------------------------------------------------------------------
 // misc
 
+// https://github.com/jonschlinkert/isobject/blob/master/index.js
+export function isObject(value) {
+  return value !== null && typeof value === "object" && Array.isArray(value) === false;
+}
+
 // @template:sleep
 export function sleep(milliSeconds: number): Promise<string> {
   return new Promise((resolve) => {
