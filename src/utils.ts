@@ -275,7 +275,7 @@ export async function $x1(
 // misc
 
 // https://github.com/jonschlinkert/isobject/blob/master/index.js
-export function isObject(value) {
+export function isObject(value: any): boolean {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }
 
