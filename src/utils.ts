@@ -184,10 +184,11 @@ export async function puppeteerBrowserPage(
       // ChromeArgOptions
       headless: flgs["puppeteer-headless"],
       // https://peter.sh/experiments/chromium-command-line-switches/
-      args: ["--window-position=20,20", "--window-size=1400,800"],
-      devtools: true,
+      // args: ["--window-position=20,20", "--window-size=1400,800"],
+      // devtools: true,
       // BrowserOptions
       ignoreHTTPSErrors: flgs["ignore-https"],
+      defaultViewport: null,
       // slowMo: 50, // for page.type
       // Timeoutable
     });
