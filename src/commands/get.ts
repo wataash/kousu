@@ -471,7 +471,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       ret.push(null);
       continue;
     }
-    if (isNaN(parseInt(datumKyukei[i] as string, 10))) {
+    if (isNaN(parseFloat(datumKyukei[i] as string))) {
       throw new KousuError(
         `BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`,
         true
@@ -482,7 +482,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       begin: datumBegin[i] as string,
       end: datumEnd[i] as string,
       yokujitsu: datumYokujitsu[i] as boolean,
-      kyukei: parseInt(datumKyukei[i] as string, 10),
+      kyukei: parseFloat(datumKyukei[i] as string),
       yasumi: datumYasumi[i] as "" | "全休" | "午前" | "午後",
     });
   }
@@ -614,20 +614,20 @@ export function parseWeekJisseki(
       if (elem.textContent === "" || elem.textContent === "作業時間") {
         return -1;
       }
-      if (isNaN(parseInt(elem.textContent as string, 10))) {
+      if (isNaN(parseFloat(elem.textContent as string))) {
         throw new KousuError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
       }
-      return parseInt(elem.textContent as string, 10);
+      return parseFloat(elem.textContent as string);
     }
   );
   const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map((elem) => {
     if (elem.textContent === "" || elem.textContent === "不明時間") {
       return null;
     }
-    if (isNaN(parseInt(elem.textContent as string, 10))) {
+    if (isNaN(parseFloat(elem.textContent as string))) {
       throw new KousuError(`${errMsg}: 不明時間: ${elem.textContent})`, true);
     }
-    return parseInt(elem.textContent as string, 10);
+    return parseFloat(elem.textContent as string);
   });
   timesSagyou.shift(); // -1 ("")
   timesSagyou.shift(); // -1 ("")
@@ -671,10 +671,10 @@ export function parseWeekJisseki(
   // const projects_text: Text[] = x('tr/td[7]', tbody);
   // 月 ... 日
   const parseJisseki = (s: string, trtd: string): number => {
-    if (isNaN(parseInt(s as string, 10))) {
+    if (isNaN(parseFloat(s as string))) {
       throw new KousuError(`${errMsg}: 作業時間: ${trtd}: ${s})`, true);
     }
-    return parseInt(s as string, 10);
+    return parseFloat(s as string);
   };
   const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map((elem) =>
     parseJisseki(elem.textContent as string, `tr/td[7]`)
