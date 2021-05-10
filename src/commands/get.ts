@@ -7,6 +7,8 @@ import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type * as oclifParser from "@oclif/parser";
 import * as jsdom from "jsdom";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
@@ -27,20 +29,22 @@ export default class Get extends Command {
 
   static examples = undefined;
 
+  static args: oclifParser.args.Input = [
+    { name: "file", description: "JSONの出力パス", required: true },
+  ];
+
   static flags = {
     ...utils.oclifFlags,
     ...utils.oclifFlagsPuppeteer,
-
-    "out-json": oclifCommand.flags.string({
-      description:
-        "jsonの出力パス; 指定しなければ標準出力 (environment variable: KOUSU_OUT_JSON)",
-      env: "KOUSU_OUT_JSON",
-    }),
 
     // hidden
     "out-csv": oclifCommand.flags.string({
       hidden: true,
       env: "KOUSU_OUT_CSV",
+    }),
+    "out-json": oclifCommand.flags.string({
+      hidden: true,
+      env: "KOUSU_OUT_JSON",
     }),
   };
 
@@ -57,6 +61,11 @@ export default class Get extends Command {
     if (flgs["out-csv"] !== undefined) {
       throw new KousuError(
         "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
+      );
+    }
+    if (flgs["out-json"] !== undefined) {
+      throw new KousuError(
+        "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました"
       );
     }
 
@@ -197,11 +206,7 @@ export default class Get extends Command {
  }
  `;
 
-    if (flgs["out-json"] === undefined) {
-      process.stdout.write(json);
-    } else {
-      fs.writeFileSync(flgs["out-json"], json);
-    }
+    fs.writeFileSync(parseResult.args.file, json);
 
     logger.debug("bye");
     this.exit(0);

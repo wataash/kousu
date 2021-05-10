@@ -7,6 +7,8 @@ import * as fs from "fs";
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type * as oclifParser from "@oclif/parser";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
@@ -25,21 +27,22 @@ export default class Get extends Command {
 
   static examples = undefined;
 
+  static args: oclifParser.args.Input = [
+    { name: "file", description: "入力するJSONのパス", required: true },
+  ];
+
   static flags = {
     ...utils.oclifFlags,
     ...utils.oclifFlagsPuppeteer,
-
-    "in-json": oclifCommand.flags.string({
-      description: "入力するjsonのパス (environment variable: KOUSU_IN_JSON)",
-      required: true,
-      exclusive: ["out-json"],
-      env: "KOUSU_IN_JSON",
-    }),
 
     // hidden
     "in-csv": oclifCommand.flags.string({
       hidden: true,
       env: "KOUSU_IN_CSV",
+    }),
+    "in-json": oclifCommand.flags.string({
+      hidden: true,
+      env: "KOUSU_IN_JSON",
     }),
   };
 
@@ -58,14 +61,19 @@ export default class Get extends Command {
         "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました"
       );
     }
+    if (flgs["in-json"] !== undefined) {
+      throw new KousuError(
+        "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました"
+      );
+    }
 
     const kousu: Kousu = (() => {
       const j = JSON.parse(
-        fs.readFileSync(flgs["in-json"]).toString()
+        fs.readFileSync(parseResult.args.file).toString()
       ) as Kousu;
       const e = (msg: string) => {
-        throw new KousuError(`invalid JSON: ${msg}`)
-      }
+        throw new KousuError(`invalid JSON: ${msg}`);
+      };
       // TODO: more strict check with quicktype
       if (j.version === undefined)
         e(`"version" not defined, must be "0.1.0"`);

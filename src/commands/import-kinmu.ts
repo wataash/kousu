@@ -4,6 +4,8 @@
 
 import { Command } from "@oclif/command";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
+import type * as oclifParser from "@oclif/parser";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 import { KousuError } from "../common";
@@ -19,6 +21,8 @@ export default class MaKinmuImport extends Command {
   static description = "MA-EYESにログインして「勤務時間取込」「保存」を行う";
 
   static examples = undefined;
+
+  static args?: oclifParser.args.Input = undefined;
 
   static flags = {
     ...utils.oclifFlags,
