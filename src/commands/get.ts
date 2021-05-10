@@ -60,7 +60,7 @@ export default class Get extends Command {
       );
     }
 
-    // [XXX:eslint-tuple]
+    // [XXX:typescript-eslint#2098]
     const tmp = await utils.puppeteerBrowserPage(flgs);
     const browser = tmp[0] as puppeteer.Browser;
     const page = tmp[1] as puppeteer.Page;
@@ -135,7 +135,7 @@ export default class Get extends Command {
         return kinmus;
       })();
 
-      // [XXX:eslint-tuple]
+      // [XXX:typescript-eslint#2098]
       const tmp = await (async () => {
         const elem = await utils.$x1(
           page,
@@ -459,7 +459,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 // -----------------------------------------------------------------------------
 // 工数実績入力表パース
 
-// [XXX:eslint-tuple]: tuple type breaks eslint
+// [XXX:typescript-eslint#2098]: tuple type breaks eslint
 // https://github.com/typescript-eslint/typescript-eslint/issues/2098
 // $ npx eslint src/commands/get.ts
 // /home/wsh/qjs/tesjs/proj/kousu/src/commands/get.ts

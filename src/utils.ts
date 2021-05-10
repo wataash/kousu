@@ -162,7 +162,7 @@ export const oclifFlagsPuppeteer = {
 
 // not sure oclifParser.OutputFlags is correct -- but seems to work
 //
-// [XXX:eslint-tuple]
+// [XXX:typescript-eslint#2098]
 export async function puppeteerBrowserPage(
   flgs: oclifParser.OutputFlags<typeof oclifFlags & typeof oclifFlagsPuppeteer>
 ): Promise<any> /* Promise<[puppeteer.Browser, puppeteer.Page]> */ {

@@ -87,7 +87,7 @@ export default class Get extends Command {
       return acc;
     }, {} as { [date: string]: typeof kousu.jissekis[number] });
 
-    // [XXX:eslint-tuple]
+    // [XXX:typescript-eslint#2098]
     const tmp = await utils.puppeteerBrowserPage(flgs);
     const browser = tmp[0] as puppeteer.Browser;
     const page = tmp[1] as puppeteer.Page;

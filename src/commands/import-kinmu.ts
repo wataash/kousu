@@ -35,7 +35,7 @@ export default class MaKinmuImport extends Command {
     const year = this.year;
     const month = this.month;
 
-    // [XXX:eslint-tuple]
+    // [XXX:typescript-eslint#2098]
     const tmp = await utils.puppeteerBrowserPage(flgs);
     const browser = tmp[0] as puppeteer.Browser;
     const page = tmp[1] as puppeteer.Page;
