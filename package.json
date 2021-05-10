@@ -28,7 +28,6 @@
     "@types/mocha": "^8.2.2",
     "@types/node": "^15.0.2",
     "@types/papaparse": "^5.2.5",
-    "@types/puppeteer": "^5.4.3",
     "@types/xmldom": "^0.1.30",
     "@typescript-eslint/eslint-plugin": "^4.23.0",
     "chai": "^4.3.4",
