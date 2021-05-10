@@ -215,7 +215,7 @@ export async function puppeteerCookieLoad(
     throw new KousuError(`cookie file (${cookiePath}) not found`);
   }
   const txt = fs.readFileSync(cookiePath).toString();
-  const cookies: puppeteer.SetCookie[] = JSON.parse(txt);
+  const cookies: puppeteer.Protocol.Network.CookieParam[] = JSON.parse(txt);
   for (const cookie of cookies) {
     logger.debug(`page.setCookie(): ${JSON.stringify(cookie)}`);
     // eslint-disable-next-line no-await-in-loop
