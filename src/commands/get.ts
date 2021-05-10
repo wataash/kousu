@@ -247,6 +247,29 @@ export interface Kousu {
   jissekis: (Kinmu & Jisseki)[];
 }
 
+export interface Kinmu010 {
+  date: string; // "7/27(月)" "8/1(土)"
+  begin: string; // "09:00"
+  end: string; // "17:30"
+  yokujitsu: boolean;
+  kyukei: string; // "0.0"
+  yasumi: "" | "全休" | "午前" | "午後";
+}
+
+export interface Jisseki010 {
+  sagyou: string; // "0.0"
+  fumei: string; // "0.0"; 前後の月は ""
+  jisseki: {
+    [projectId: string]: string; // "proj1": "0.0"
+  };
+}
+
+export interface Kousu010 {
+  version: string;
+  projects: { [projectId: string]: ProjectName };
+  jissekis: (Kinmu010 & Jisseki010)[];
+}
+
 // -----------------------------------------------------------------------------
 // 勤務表パース
 

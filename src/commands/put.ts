@@ -12,7 +12,7 @@ import type * as oclifParser from "@oclif/parser";
 import type * as puppeteer from "puppeteer";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Jisseki, Kinmu, Kousu, ProjectName } from "./get";
+import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./get";
 import { KousuError } from "../common";
 import * as ma from "../ma";
 import * as utils from "../utils";
@@ -67,34 +67,43 @@ export default class Get extends Command {
       );
     }
 
-    const kousu: Kousu = (() => {
+    let compat: "0.1.0" | null = null;
+
+    const kousu: Kousu | Kousu010 = (() => {
       const j = JSON.parse(
         fs.readFileSync(parseResult.args.file).toString()
-      ) as Kousu;
+      ) as Kousu | Kousu010;
       const e = (msg: string) => {
         throw new KousuError(`invalid JSON: ${msg}`);
       };
       // TODO: more strict check with quicktype
-      if (j.version === undefined)
-        e(`"version" not defined, must be "0.1.0"`);
-      if (j.version !== "0.1.0")
-        e(`"version" must be "0.1.0"`);
+      if (j.version === undefined) e(`"version" not defined, must be "0.3.0"`);
+      if (j.version !== "0.1.0" && j.version !== "0.3.0")
+        e(`"version" must be "0.3.0"`);
+      if (j.version === "0.1.0") compat = "0.1.0";
       if (j.projects === undefined)
-        e(`"projects" not defined, must be object ({"project": "projectName"})`);
+        e(
+          `"projects" not defined, must be object ({"project": "projectName"})`
+        );
       if (!utils.isObject(j.projects))
         e(`"projects" must be object ({"project": "projectName"})`);
-      if (j.jissekis === undefined)
-        e(`"jissekis" not defined, must be array`);
-      if (!Array.isArray(j.jissekis))
-        e(`"projects" must be array`);
+      if (j.jissekis === undefined) e(`"jissekis" not defined, must be array`);
+      if (!Array.isArray(j.jissekis)) e(`"projects" must be array`);
       return j;
     })();
 
-    const mapDateJisseki = kousu.jissekis.reduce((acc, jisseki) => {
-      acc[jisseki.date] = jisseki;
-      return acc;
-    }, {} as { [date: string]: typeof kousu.jissekis[number] });
-
+    const mapDateJisseki = (() => {
+      if (compat === "0.1.0") {
+        return (kousu as Kousu010).jissekis.reduce((acc, jisseki) => {
+          acc[jisseki.date] = jisseki;
+          return acc;
+        }, {} as { [date: string]: typeof kousu.jissekis[number] });
+      }
+      return (kousu as Kousu).jissekis.reduce((acc, jisseki) => {
+        acc[jisseki.date] = jisseki;
+        return acc;
+      }, {} as { [date: string]: typeof kousu.jissekis[number] });
+    })();
     // [XXX:typescript-eslint#2098]
     const tmp = await utils.puppeteerBrowserPage(flgs);
     const browser = tmp[0] as puppeteer.Browser;
@@ -179,9 +188,23 @@ export default class Get extends Command {
           )
         );
         for (const [iProj, project] of projects.entries()) {
-          const timeJisseki = jisseki.jisseki[project];
-          if (timeJisseki === undefined) {
-            logger.warn(`project ${project} not found in 工数実績入力表; skip`);
+          const timeJisseki = (() => {
+            const tmp = jisseki.jisseki[project];
+            if (tmp === undefined) {
+              logger.warn(
+                `project ${project} not found in 工数実績入力表; skip`
+              );
+              return null;
+            }
+            if (typeof tmp === "string") {
+              if (compat !== "0.1.0") {
+                throw new KousuError(`BUG: jisseki.jisseki[project]: ${tmp}`);
+              }
+              return tmp;
+            }
+            return tmp.toFixed(1);
+          })();
+          if (timeJisseki === null) {
             continue;
           }
           // $x(`//tbody[@id="workResultView:items_data"]/tr[1]/td[7]`)[0]
