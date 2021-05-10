@@ -82,17 +82,17 @@ export default class Get extends Command {
 
     await ma.selectYearMonth(page, year, month);
 
-    // {
+    // [{
     //   date: "7/27(月)";
     //   begin: "15:04";
     //   end: "15:04";
     //   yokujitsu: false;
-    //   kyukei: "0.0";
+    //   kyukei: 0;
     //   yasumi: "";
-    //   sagyou: "0.0";
-    //   fumei: "0.0";
+    //   sagyou: 0;
+    //   fumei: 0;
     //   jisseki: {
-    //     proj1: "0.0";
+    //     proj1: 0;
     //   }
     // }
     const kousus: (Kinmu & Jisseki)[] = [];
@@ -172,20 +172,20 @@ export default class Get extends Command {
     }
 
     // {
-    //   "version": "0.1.0",
+    //   "version": "0.3.0",
     //   "projects": {
     //     "proj1": "proj1 name"
     //     "proj2": "proj2 name"
     //   },
     //   "jissekis": [
-    //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":"0","yasumi":"全休","sagyou":"0.0","fumei":"0.0","jisseki":{"proj1":"0.0","proj2":"0.0"}},
+    //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":0,"yasumi":"全休","sagyou":0,"fumei":0,"jisseki":{"proj1":0,"proj2":0}},
     //     {"date":"1/2(土)",...},
     //     ...
     //   ]
     // }
     // const json = `${JSON.stringify(kousus, null, 2)}\n`;
     const json = `{
-  "version": "0.1.0",
+  "version": "0.3.0",
   "projects": ${JSON.stringify(projects, null, 2)
     .split("\n")
     .map((row) => `  ${row}`)
@@ -224,15 +224,15 @@ export interface Kinmu {
   begin: string; // "09:00"
   end: string; // "17:30"
   yokujitsu: boolean;
-  kyukei: string; // "0.0"
+  kyukei: number; // 0.0
   yasumi: "" | "全休" | "午前" | "午後";
 }
 
 export interface Jisseki {
-  sagyou: string; // "0.0"
-  fumei: string; // "0.0"; 前後の月は ""
+  sagyou: number; // 0.0
+  fumei: number | null; // 0.0; 前後の月は null
   jisseki: {
-    [projectId: string]: string; // "proj1": "0.0"
+    [projectId: string]: number; // "proj1": 0.0
   };
 }
 
@@ -443,12 +443,18 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       ret.push(null);
       continue;
     }
+    if (isNaN(parseInt(datumKyukei[i] as string, 10))) {
+      throw new KousuError(
+        `BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`,
+        true
+      );
+    }
     ret.push({
       date: datumDate[i],
       begin: datumBegin[i] as string,
       end: datumEnd[i] as string,
       yokujitsu: datumYokujitsu[i] as boolean,
-      kyukei: datumKyukei[i] as string,
+      kyukei: parseInt(datumKyukei[i] as string, 10),
       yasumi: datumYasumi[i] as "" | "全休" | "午前" | "午後",
     });
   }
@@ -576,21 +582,35 @@ export function parseWeekJisseki(
   // const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map((elem) => elem.textContent);
 
   const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map(
-    (elem) => elem.textContent
-  ) as string[];
-  const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map(
-    (elem) => elem.textContent
-  ) as string[];
-  timesSagyou.shift();
-  timesSagyou.shift();
-  timesSagyou.shift();
-  timesSagyou.shift();
-  timesSagyou.shift(); // "作業時間"
-  timesFumei.shift();
-  timesFumei.shift();
-  timesFumei.shift();
-  timesFumei.shift();
-  timesFumei.shift(); // "不明時間"
+    (elem) => {
+      if (elem.textContent === "" || elem.textContent === "作業時間") {
+        return -1;
+      }
+      if (isNaN(parseInt(elem.textContent as string, 10))) {
+        throw new KousuError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
+      }
+      return parseInt(elem.textContent as string, 10);
+    }
+  );
+  const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map((elem) => {
+    if (elem.textContent === "" || elem.textContent === "不明時間") {
+      return null;
+    }
+    if (isNaN(parseInt(elem.textContent as string, 10))) {
+      throw new KousuError(`${errMsg}: 不明時間: ${elem.textContent})`, true);
+    }
+    return parseInt(elem.textContent as string, 10);
+  });
+  timesSagyou.shift(); // -1 ("")
+  timesSagyou.shift(); // -1 ("")
+  timesSagyou.shift(); // -1 ("")
+  timesSagyou.shift(); // -1 ("")
+  timesSagyou.shift(); // -1 ("作業時間")
+  timesFumei.shift(); // null ("")
+  timesFumei.shift(); // null ("")
+  timesFumei.shift(); // null ("")
+  timesFumei.shift(); // null ("")
+  timesFumei.shift(); // null ("不明時間")
 
   const dates = (x(`tr[4]/th/span[2]`, thead) as Element[]).map(
     (elem) => elem.textContent as string
@@ -622,26 +642,35 @@ export function parseWeekJisseki(
 
   // const projects_text: Text[] = x('tr/td[7]', tbody);
   // 月 ... 日
+  const parseJisseki = (s: string, trtd: string): number => {
+    if (isNaN(parseInt(s as string, 10))) {
+      throw new KousuError(
+        `${errMsg}: 作業時間: ${trtd}: ${s})`,
+        true
+      );
+    }
+    return parseInt(s as string, 10);
+  }
   const kousus0 = (x(`tr/td[7]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[7]`)
   );
   const kousus1 = (x(`tr/td[8]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[8]`)
   );
   const kousus2 = (x(`tr/td[9]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[9]`)
   );
   const kousus3 = (x(`tr/td[10]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[10]`)
   );
   const kousus4 = (x(`tr/td[11]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[11]`)
   );
   const kousus5 = (x(`tr/td[12]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[12]`)
   );
   const kousus6 = (x(`tr/td[13]`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
+    (elem) => parseJisseki(elem.textContent as string, `tr/td[13]`)
   );
 
   logger.debug(`number of projects: ${projectIds.length}`);
