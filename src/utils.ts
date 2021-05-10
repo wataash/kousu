@@ -172,7 +172,7 @@ export async function puppeteerBrowserPage(
     if (flgs["puppeteer-connect-url"] !== undefined) {
       return puppeteer.connect({
         // ConnectOptions
-        browserURL: "http://localhost:55592",
+        browserURL: flgs["puppeteer-connect-url"],
         // BrowserOptions
         ignoreHTTPSErrors: flgs["ignore-https"],
         // これが無いと800x600になる
