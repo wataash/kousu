@@ -48,7 +48,7 @@ export async function login(
     delay: 0.5,
   });
   logger.debug('page.click("#loginView\\:j_idt32")');
-  // TODO: --puppeteer-connect-url だと画面が小さくて別のボタンが押されるっぽい
+  // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
   await Promise.all([
     page.waitForNavigation(),
     page.click("#loginView\\:j_idt32"),
