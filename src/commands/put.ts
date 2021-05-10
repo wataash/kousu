@@ -232,11 +232,17 @@ export default class Get extends Command {
           await page.keyboard.type(timeJisseki);
           // Shift-Tab で値を確定・送信
           // Shift-Tab でなく Tab だと右のセルが選択されるが、次のfor-iterationで上の txt が "" になる
+
+          // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
           await Promise.all([
             ma.waitLoading(page),
-            page.keyboard.down("Shift"),
-            page.keyboard.press("Tab"),
-            page.keyboard.up("Shift"),
+            (
+              await utils.$x1(
+                page,
+                `//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`,
+                "工数実績入力表の形式が不正です"
+              )
+            ).click(),
           ]);
           "breakpoint".match(/breakpoint/);
         }
