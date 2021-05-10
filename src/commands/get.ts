@@ -8,6 +8,7 @@ import * as fs from "fs";
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
 import * as jsdom from "jsdom";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
 import * as xmldom from "xmldom";

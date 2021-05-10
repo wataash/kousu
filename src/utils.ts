@@ -6,12 +6,15 @@ import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import * as oclifErrors from "@oclif/errors";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as oclifParser from "@oclif/parser";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
 
 import * as types from "./common";
 import { KousuError } from "./common";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ElementHandle } from "puppeteer";
 
 // @template:logger
@@ -275,6 +278,7 @@ export async function $x1(
 // misc
 
 // https://github.com/jonschlinkert/isobject/blob/master/index.js
+// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function isObject(value: any): boolean {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }

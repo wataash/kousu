@@ -6,8 +6,10 @@ import * as fs from "fs";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Jisseki, Kinmu, Kousu, ProjectName } from "./get";
 import { KousuError } from "../common";
 import * as ma from "../ma";

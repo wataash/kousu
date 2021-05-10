@@ -3,6 +3,7 @@
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-warning-comments */
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 import { KousuError } from "./common";

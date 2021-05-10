@@ -3,6 +3,7 @@
 /* eslint-disable no-await-in-loop */
 
 import { Command } from "@oclif/command";
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 import { KousuError } from "../common";
