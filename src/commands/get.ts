@@ -672,33 +672,30 @@ export function parseWeekJisseki(
   // 月 ... 日
   const parseJisseki = (s: string, trtd: string): number => {
     if (isNaN(parseInt(s as string, 10))) {
-      throw new KousuError(
-        `${errMsg}: 作業時間: ${trtd}: ${s})`,
-        true
-      );
+      throw new KousuError(`${errMsg}: 作業時間: ${trtd}: ${s})`, true);
     }
     return parseInt(s as string, 10);
-  }
-  const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[7]`)
+  };
+  const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[7]`)
   );
-  const jissekis1 = (x(`tr/td[8]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[8]`)
+  const jissekis1 = (x(`tr/td[8]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[8]`)
   );
-  const jissekis2 = (x(`tr/td[9]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[9]`)
+  const jissekis2 = (x(`tr/td[9]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[9]`)
   );
-  const jissekis3 = (x(`tr/td[10]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[10]`)
+  const jissekis3 = (x(`tr/td[10]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[10]`)
   );
-  const jissekis4 = (x(`tr/td[11]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[11]`)
+  const jissekis4 = (x(`tr/td[11]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[11]`)
   );
-  const jissekis5 = (x(`tr/td[12]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[12]`)
+  const jissekis5 = (x(`tr/td[12]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[12]`)
   );
-  const jissekis6 = (x(`tr/td[13]`, tbody) as Element[]).map(
-    (elem) => parseJisseki(elem.textContent as string, `tr/td[13]`)
+  const jissekis6 = (x(`tr/td[13]`, tbody) as Element[]).map((elem) =>
+    parseJisseki(elem.textContent as string, `tr/td[13]`)
   );
 
   logger.debug(`number of projects: ${projectIds.length}`);
