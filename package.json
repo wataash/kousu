@@ -1,7 +1,7 @@
 {
   "name": "kousu",
   "description": "ビーブレイクシステムズMA-EYES（webアプリ版）の作業実績（工数）入力を行う",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": "Wataru Ashihara @wataash",
   "bin": {
     "kousu": "./bin/run"
