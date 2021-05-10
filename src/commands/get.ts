@@ -95,7 +95,7 @@ export default class Get extends Command {
     //     proj1: 0;
     //   }
     // }
-    const kousus: (Kinmu & Jisseki)[] = [];
+    const kinmuJissekis: (Kinmu & Jisseki)[] = [];
 
     const projects: { [projectId: string]: ProjectName } = {};
 
@@ -164,7 +164,7 @@ export default class Get extends Command {
         if (kinmu === null) {
           continue;
         }
-        kousus.push(Object.assign({}, kinmu, jissekis[i]));
+        kinmuJissekis.push(Object.assign({}, kinmu, jissekis[i]));
       }
       Object.assign(projects, projects_);
 
@@ -183,14 +183,14 @@ export default class Get extends Command {
     //     ...
     //   ]
     // }
-    // const json = `${JSON.stringify(kousus, null, 2)}\n`;
+    // const json = `${JSON.stringify(kinmuJissekis, null, 2)}\n`;
     const json = `{
   "version": "0.3.0",
   "projects": ${JSON.stringify(projects, null, 2)
     .split("\n")
     .map((row) => `  ${row}`)
     .join("\n")},
-  "jissekis": [\n${kousus
+  "jissekis": [\n${kinmuJissekis
     .map((kousu) => `    ${JSON.stringify(kousu)}`)
     .join(",\n")}
   ]
@@ -651,38 +651,38 @@ export function parseWeekJisseki(
     }
     return parseInt(s as string, 10);
   }
-  const kousus0 = (x(`tr/td[7]`, tbody) as Element[]).map(
+  const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[7]`)
   );
-  const kousus1 = (x(`tr/td[8]`, tbody) as Element[]).map(
+  const jissekis1 = (x(`tr/td[8]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[8]`)
   );
-  const kousus2 = (x(`tr/td[9]`, tbody) as Element[]).map(
+  const jissekis2 = (x(`tr/td[9]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[9]`)
   );
-  const kousus3 = (x(`tr/td[10]`, tbody) as Element[]).map(
+  const jissekis3 = (x(`tr/td[10]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[10]`)
   );
-  const kousus4 = (x(`tr/td[11]`, tbody) as Element[]).map(
+  const jissekis4 = (x(`tr/td[11]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[11]`)
   );
-  const kousus5 = (x(`tr/td[12]`, tbody) as Element[]).map(
+  const jissekis5 = (x(`tr/td[12]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[12]`)
   );
-  const kousus6 = (x(`tr/td[13]`, tbody) as Element[]).map(
+  const jissekis6 = (x(`tr/td[13]`, tbody) as Element[]).map(
     (elem) => parseJisseki(elem.textContent as string, `tr/td[13]`)
   );
 
   logger.debug(`number of projects: ${projectIds.length}`);
   for (const [name, var_] of [
     ["projectNames", projectNames],
-    ["kousus0", kousus0],
-    ["kousus1", kousus1],
-    ["kousus2", kousus2],
-    ["kousus3", kousus3],
-    ["kousus4", kousus4],
-    ["kousus5", kousus5],
-    ["kousus6", kousus6],
+    ["jissekis0", jissekis0],
+    ["jissekis1", jissekis1],
+    ["jissekis2", jissekis2],
+    ["jissekis3", jissekis3],
+    ["jissekis4", jissekis4],
+    ["jissekis5", jissekis5],
+    ["jissekis6", jissekis6],
   ]) {
     if (var_.length !== projectIds.length) {
       logger.error(
@@ -728,13 +728,13 @@ export function parseWeekJisseki(
   });
   for (const [i, projectId] of projectIds.entries()) {
     projects[projectId] = projectNames[i];
-    jissekis[0].jisseki[projectId] = kousus0[i];
-    jissekis[1].jisseki[projectId] = kousus1[i];
-    jissekis[2].jisseki[projectId] = kousus2[i];
-    jissekis[3].jisseki[projectId] = kousus3[i];
-    jissekis[4].jisseki[projectId] = kousus4[i];
-    jissekis[5].jisseki[projectId] = kousus5[i];
-    jissekis[6].jisseki[projectId] = kousus6[i];
+    jissekis[0].jisseki[projectId] = jissekis0[i];
+    jissekis[1].jisseki[projectId] = jissekis1[i];
+    jissekis[2].jisseki[projectId] = jissekis2[i];
+    jissekis[3].jisseki[projectId] = jissekis3[i];
+    jissekis[4].jisseki[projectId] = jissekis4[i];
+    jissekis[5].jisseki[projectId] = jissekis5[i];
+    jissekis[6].jisseki[projectId] = jissekis6[i];
   }
 
   return [jissekis, projects];
