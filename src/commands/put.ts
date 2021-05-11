@@ -230,9 +230,7 @@ export default class Get extends Command {
           );
           await elem.click();
           await page.keyboard.type(timeJisseki);
-          // Shift-Tab で値を確定・送信
-          // Shift-Tab でなく Tab だと右のセルが選択されるが、次のfor-iterationで上の txt が "" になる
-
+          // 値の確定・送信
           // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
           await Promise.all([
             ma.waitLoading(page),
