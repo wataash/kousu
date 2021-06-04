@@ -174,7 +174,7 @@ export default class Get extends Command {
       for (const [iDate, date] of dates.entries()) {
         const jisseki = mapDateJisseki[date];
         if (jisseki === undefined) {
-          logger.debug(`${date} not found in input CSV/JSON; skip`);
+          logger.debug(`${date} not found in JSON; skip`);
           continue;
         }
         // $x(`//tbody[@id="workResultView:items_data"]/tr/td[4]/text()`)
