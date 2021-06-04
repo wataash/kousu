@@ -225,7 +225,7 @@ export default class Get extends Command {
             continue;
           }
           modified = true;
-          logger.info(
+          logger.debug(
             `${date} ${project} ${kousu.projects[project]} ${timeJisseki}`
           );
           await elem.click();
