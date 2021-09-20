@@ -58,12 +58,12 @@ export default class Get extends Command {
     const year = this.year;
     const month = this.month;
 
-    if (flgs["out-csv"] !== undefined) {
+    if ("out-csv" in flgs) {
       throw new KousuError(
         "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
       );
     }
-    if (flgs["out-json"] !== undefined) {
+    if ("out-json" in flgs) {
       throw new KousuError(
         "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました"
       );
@@ -82,7 +82,7 @@ export default class Get extends Command {
       flgs["puppeteer-cookie-load"],
       flgs["puppeteer-cookie-save"]
     );
-    if (parseResult.flags["puppeteer-cookie-save"] !== undefined) {
+    if ("puppeteer-cookie-save" in parseResult.flags) {
       logger.info("cookie-save done;");
       await browser.close();
       logger.debug("bye");

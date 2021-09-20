@@ -52,7 +52,7 @@ export default class MaKinmuImport extends Command {
       flgs["puppeteer-cookie-load"],
       flgs["puppeteer-cookie-save"]
     );
-    if (parseResult.flags["puppeteer-cookie-save"] !== undefined) {
+    if ("puppeteer-cookie-save" in parseResult.flags) {
       logger.info("cookie-save done;");
       await browser.close();
       logger.debug("bye");

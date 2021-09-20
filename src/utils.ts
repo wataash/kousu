@@ -169,7 +169,7 @@ export async function puppeteerBrowserPage(
   logger.debug("open chromium");
 
   const browser = await (async () => {
-    if (flgs["puppeteer-connect-url"] !== undefined) {
+    if ("puppeteer-connect-url" in flgs) {
       return puppeteer.connect({
         // ConnectOptions
         browserURL: flgs["puppeteer-connect-url"],
