@@ -5,6 +5,6 @@
     "prettier"
   ],
   "rules": {
-    // "semi": ["error", "always"]
+    "unicorn/no-abusive-eslint-disable": "off"
   }
 }

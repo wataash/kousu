@@ -76,6 +76,7 @@ export default class Get extends Command {
       const e = (msg: string) => {
         throw new KousuError(`invalid JSON: ${msg}`);
       };
+      // eslint-disable-next-line no-warning-comments
       // TODO: more strict check with quicktype
       if (j.version === undefined) e(`"version" not defined, must be "0.3.0"`);
       if (j.version !== "0.1.0" && j.version !== "0.3.0")
