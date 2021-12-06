@@ -13,7 +13,7 @@ import * as jsdom from "jsdom";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
-import * as xmldom from "xmldom";
+import * as xmldom from "@xmldom/xmldom";
 
 import { KousuError } from "../common";
 import * as ma from "../ma";
