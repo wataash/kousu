@@ -4,6 +4,7 @@
     "oclif-typescript",
     "prettier"
   ],
+  "root": true,
   "rules": {
     "unicorn/no-abusive-eslint-disable": "off"
   }
