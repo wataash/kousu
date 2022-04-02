@@ -70,9 +70,9 @@ export default class Get extends Command {
     let compat: "0.1.0" | null = null;
 
     const kousu: Kousu | Kousu010 = (() => {
-      const j = JSON.parse(
-        fs.readFileSync(parseResult.args.file).toString()
-      ) as Kousu | Kousu010;
+      const j = JSON.parse(fs.readFileSync(parseResult.args.file, "utf-8")) as
+        | Kousu
+        | Kousu010;
       const e = (msg: string) => {
         throw new KousuError(`invalid JSON: ${msg}`);
       };

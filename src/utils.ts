@@ -217,7 +217,7 @@ export async function puppeteerCookieLoad(
     // TODO: catch ENOENT instead
     throw new KousuError(`cookie file (${cookiePath}) not found`);
   }
-  const txt = fs.readFileSync(cookiePath).toString();
+  const txt = fs.readFileSync(cookiePath, "utf8");
   const cookies: puppeteer.Protocol.Network.CookieParam[] = JSON.parse(txt);
   for (const cookie of cookies) {
     logger.debug(`page.setCookie(): ${JSON.stringify(cookie)}`);
