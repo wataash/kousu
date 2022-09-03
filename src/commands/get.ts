@@ -29,9 +29,7 @@ export default class Get extends Command {
 
   static examples = undefined;
 
-  static args: oclifParser.args.Input = [
-    { name: "file", description: "JSONの出力パス", required: true },
-  ];
+  static args: oclifParser.args.Input = [{ name: "file", description: "JSONの出力パス", required: true }];
 
   static flags = {
     ...utils.oclifFlags,
@@ -59,14 +57,10 @@ export default class Get extends Command {
     const month = this.month;
 
     if ("out-csv" in flgs) {
-      throw new KousuError(
-        "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
-      );
+      throw new KousuError("--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました");
     }
     if ("out-json" in flgs) {
-      throw new KousuError(
-        "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました"
-      );
+      throw new KousuError("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました");
     }
 
     // [XXX:typescript-eslint#2098]
@@ -108,16 +102,11 @@ export default class Get extends Command {
 
     const projects: { [projectId: string]: ProjectName } = {};
 
-    const elemsCalendarDate = await utils.$x(
-      page,
-      `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`
-    );
+    const elemsCalendarDate = await utils.$x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     for (let i = 0; i < elemsCalendarDate.length; i++) {
       // click monday
       // see [XXX-$x-again]
-      const elemsCalendarDate2 = await page.$x(
-        `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`
-      );
+      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
       const elemDate = elemsCalendarDate2[i];
       const txt = await page.evaluate((el) => el.innerText, elemDate);
       // nbsp
@@ -128,17 +117,11 @@ export default class Get extends Command {
         // not monday nor 1st
         continue;
       }
-      logger.info(
-        `click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`
-      );
+      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
       await Promise.all([ma.waitLoading(page), elemDate.click()]);
 
       const kinmus = await (async () => {
-        const elem = await utils.$x1(
-          page,
-          `//table[@id="workResultView:j_idt69"]`,
-          "勤務時間表の形式が不正です"
-        );
+        const elem = await utils.$x1(page, `//table[@id="workResultView:j_idt69"]`, "勤務時間表の形式が不正です");
         const html = await elem.evaluate((body) => body.outerHTML);
         const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
         return kinmus;
@@ -146,11 +129,7 @@ export default class Get extends Command {
 
       // [XXX:typescript-eslint#2098]
       const tmp = await (async () => {
-        const elem = await utils.$x1(
-          page,
-          `//div[@id="workResultView:items"]`,
-          "工数実績入力表の形式が不正です"
-        );
+        const elem = await utils.$x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
         const html = await elem.evaluate((body) => body.outerHTML);
         return parseWeekJisseki(html);
       })();
@@ -158,14 +137,10 @@ export default class Get extends Command {
       const projects_ = tmp[1] as { [projectId: string]: ProjectName };
 
       if (kinmus.length !== 7) {
-        logger.error(
-          `勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`
-        );
+        logger.error(`勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`);
       }
       if (jissekis.length !== 7) {
-        logger.error(
-          `工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`
-        );
+        logger.error(`工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`);
       }
       // TODO: projects_ が全ての週で一致するか確認
 
@@ -199,9 +174,7 @@ export default class Get extends Command {
     .split("\n")
     .map((row) => `  ${row}`)
     .join("\n")},
-  "jissekis": [\n${kinmuJissekis
-    .map((kousu) => `    ${JSON.stringify(kousu)}`)
-    .join(",\n")}
+  "jissekis": [\n${kinmuJissekis.map((kousu) => `    ${JSON.stringify(kousu)}`).join(",\n")}
   ]
  }
  `;
@@ -294,11 +267,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   const datumYasumi: (string | null)[] = []; //     null     null     null     null     null     全休    全休
   // -> [{"date":"8/1(土)", "begin":"09:00", "end":"17:30", "yokujitu":false, "kyukei": "0.0", "yasumi":""|"全休"|"午前"|"午後"}]
 
-  const checkTds = (
-    row: number,
-    tds: NodeListOf<HTMLElementTagNameMap["td"]>,
-    text0: string
-  ) => {
+  const checkTds = (row: number, tds: NodeListOf<HTMLElementTagNameMap["td"]>, text0: string) => {
     if (tds.length !== 8) {
       throw new KousuError(
         `BUG: 勤務時間表の形式が不正です (expected 8 tds (header+月火水木金土日), found ${tds.length} tds)`,
@@ -323,17 +292,11 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
     for (let i = 1; i < tds.length; i++) {
       const txt = tds[i].textContent;
       if (txt === null) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`, true);
       }
       const match = txt.match(/(\d\d?)\/(\d\d?)\((月|火|水|木|金|土|日)\)/);
       if (match === null) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です: ${txt}`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です: ${txt}`, true);
       }
       datumDate.push(match[0]);
     }
@@ -353,10 +316,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumBegin.push(value);
     }
@@ -376,10 +336,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumEnd.push(value);
     }
@@ -399,10 +356,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const ariaChecked = input.getAttribute("aria-checked");
       if (ariaChecked !== "true" && ariaChecked !== "false") {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`, true);
       }
       datumYokujitsu.push(ariaChecked === "true");
     }
@@ -422,10 +376,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const value = input.getAttribute("value");
       if (value === null) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`,
-          true
-        );
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumKyukei.push(value);
     }
@@ -444,16 +395,8 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
         continue;
       }
       const text = option.textContent;
-      if (
-        text !== "" &&
-        text !== "全休" &&
-        text !== "午前" &&
-        text !== "午後"
-      ) {
-        throw new KousuError(
-          `BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`,
-          true
-        );
+      if (text !== "" && text !== "全休" && text !== "午前" && text !== "午後") {
+        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`, true);
       }
       datumYasumi.push(text);
     }
@@ -472,10 +415,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       continue;
     }
     if (isNaN(parseFloat(datumKyukei[i] as string))) {
-      throw new KousuError(
-        `BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`,
-        true
-      );
+      throw new KousuError(`BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`, true);
     }
     ret.push({
       date: datumDate[i],
@@ -498,9 +438,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 // $ npx eslint src/commands/get.ts
 // /home/wsh/qjs/tesjs/proj/kousu/src/commands/get.ts
 //   0:0  error  Parsing error: Cannot read property 'map' of undefined
-export function parseWeekJisseki(
-  html: string
-): any /* [Jisseki[], { [projectId: string]: ProjectName }] */ {
+export function parseWeekJisseki(html: string): any /* [Jisseki[], { [projectId: string]: ProjectName }] */ {
   const jissekis: Jisseki[] = [];
   const projects: { [projectId: string]: ProjectName } = {};
 
@@ -513,10 +451,7 @@ export function parseWeekJisseki(
     return xpath.select(expression, node);
   };
 
-  const x1 = (
-    expression: string,
-    node: any
-  ): ReturnType<typeof xpath.select1> => {
+  const x1 = (expression: string, node: any): ReturnType<typeof xpath.select1> => {
     logger.debug(`xpath.select1(\`${expression}\`)`);
     return xpath.select1(expression, node);
   };
@@ -524,22 +459,16 @@ export function parseWeekJisseki(
   const assertText = (expression: string, node: any, data: string) => {
     const node2 = x1(expression, node);
     if (node2 === undefined) {
-      throw new KousuError(
-        `${errMsg}: node.$x(\`${expression}\`) === undefined`
-      );
+      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`) === undefined`);
     }
     // ReferenceError: Text is not defined
     // if (!(node2 instanceof Text)) {
     if (node2.constructor.name !== "Text") {
-      throw new KousuError(
-        `${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`
-      );
+      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
     }
     const node3 = node2 as Text;
     if (node3.data !== data) {
-      throw new KousuError(
-        `${errMsg}: node.$x(\`${expression}\`).data: expected: ${data}, actual: ${node3.data}`
-      );
+      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`).data: expected: ${data}, actual: ${node3.data}`);
     }
     logger.debug(`$x(\`${expression}\`) === "${data}", ok`);
   };
@@ -609,17 +538,15 @@ export function parseWeekJisseki(
   // textContent: contains empty columns
   // const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map((elem) => elem.textContent);
 
-  const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map(
-    (elem) => {
-      if (elem.textContent === "" || elem.textContent === "作業時間") {
-        return -1;
-      }
-      if (isNaN(parseFloat(elem.textContent as string))) {
-        throw new KousuError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
-      }
-      return parseFloat(elem.textContent as string);
+  const timesSagyou = (x(`tr[2]/th/span[2]`, thead) as Element[]).map((elem) => {
+    if (elem.textContent === "" || elem.textContent === "作業時間") {
+      return -1;
     }
-  );
+    if (isNaN(parseFloat(elem.textContent as string))) {
+      throw new KousuError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
+    }
+    return parseFloat(elem.textContent as string);
+  });
   const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map((elem) => {
     if (elem.textContent === "" || elem.textContent === "不明時間") {
       return null;
@@ -640,9 +567,7 @@ export function parseWeekJisseki(
   timesFumei.shift(); // null ("")
   timesFumei.shift(); // null ("不明時間")
 
-  const dates = (x(`tr[4]/th/span[2]`, thead) as Element[]).map(
-    (elem) => elem.textContent as string
-  );
+  const dates = (x(`tr[4]/th/span[2]`, thead) as Element[]).map((elem) => elem.textContent as string);
   dates.shift();
   dates.shift();
   dates.shift(); // "項目No"
@@ -661,12 +586,8 @@ export function parseWeekJisseki(
     }
   }
 
-  const projectIds = (x(`tr/td[4]/div/span`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
-  );
-  const projectNames = (x(`tr/td[5]/div/span`, tbody) as Element[]).map(
-    (elem) => elem.textContent as string
-  );
+  const projectIds = (x(`tr/td[4]/div/span`, tbody) as Element[]).map((elem) => elem.textContent as string);
+  const projectNames = (x(`tr/td[5]/div/span`, tbody) as Element[]).map((elem) => elem.textContent as string);
 
   // const projects_text: Text[] = x('tr/td[7]', tbody);
   // 月 ... 日
@@ -710,9 +631,7 @@ export function parseWeekJisseki(
     ["jissekis6", jissekis6],
   ]) {
     if (var_.length !== projectIds.length) {
-      logger.error(
-        `${errMsg}: ${name}.length (${var_.length}) !== projectIds.length (${projectIds.length})`
-      );
+      logger.error(`${errMsg}: ${name}.length (${var_.length}) !== projectIds.length (${projectIds.length})`);
     }
   }
 

@@ -78,16 +78,12 @@ export default class MaKinmuImport extends Command {
     // C[28]24   [29]25   [30]26   [31]27   [32]28   [33]29   [34]30
     // C[35]31   [36]     [37]     [38]     [39]     [40]1    [41]
     // C: click & load & save
-    const elemsCalendarDate = await page.$x(
-      `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`
-    );
+    const elemsCalendarDate = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     for (let i = 0; i < elemsCalendarDate.length; i++) {
       // [XXX-$x-again]: We can't iterate over elemsCalendarDate:
       //   for (const [i, elem] of elemsCalendarDate.entries()) {
       //   since DOM is updated within the loop (just try it if you don't get it).
-      const elemsCalendarDate2 = await page.$x(
-        `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`
-      );
+      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
       const elemDate = elemsCalendarDate2[i];
       const txt = await page.evaluate((el) => el.innerText, elemDate);
       if (txt === "\u00A0") {
@@ -98,9 +94,7 @@ export default class MaKinmuImport extends Command {
         // not monday nor 1st
         continue;
       }
-      logger.info(
-        `click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`
-      );
+      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
       // await Promise.all([page.waitForNavigation(), elemDate.click()]); // halts
       await elemDate.click();
       await ma.waitLoading(page);
@@ -116,10 +110,7 @@ export default class MaKinmuImport extends Command {
       // await page.waitForFunction('PrimeFaces.ab({s:"workResultView:j_idt52",u:"workResultView"});');
       // // never return? debug again
       // await page.waitForFunction("PrimeFaces.ab({s:\"workResultView:j_idt52\",u:\"workResultView\"})");
-      await Promise.all([
-        ma.waitLoading(page),
-        page.click("#workResultView\\:j_idt52"),
-      ]);
+      await Promise.all([ma.waitLoading(page), page.click("#workResultView\\:j_idt52")]);
 
       // <button id="workResultView:j_idt50:saveButton" name="workResultView:j_idt50:saveButton"
       //   class="ui-button ..."
@@ -135,10 +126,7 @@ export default class MaKinmuImport extends Command {
       // );
       // // halts
       // await Promise.all([page.waitForNavigation(), page.click("#workResultView\\:j_idt50\\:saveButton")]);
-      await Promise.all([
-        ma.waitLoading(page),
-        page.click("#workResultView\\:j_idt50\\:saveButton"),
-      ]);
+      await Promise.all([ma.waitLoading(page), page.click("#workResultView\\:j_idt50\\:saveButton")]);
 
       logger.debug("next");
     }

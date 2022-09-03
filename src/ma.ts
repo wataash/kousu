@@ -49,10 +49,7 @@ export async function login(
   });
   logger.debug('page.click("#loginView\\:j_idt32")');
   // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
-  await Promise.all([
-    page.waitForNavigation(),
-    page.click("#loginView\\:j_idt32"),
-  ]);
+  await Promise.all([page.waitForNavigation(), page.click("#loginView\\:j_idt32")]);
   if (pathCookieSave !== undefined) {
     await utils.puppeteerCookieSave(page, pathCookieSave);
   }
@@ -79,37 +76,23 @@ async function waitLoadingGIF(
     //   <!--   ^^^^^^^^^^^^^^^^^^^^^^                                                                                                                                                                ^^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
-    const blockuiContent = await page.$x(
-      '//div[contains(@class, "ui-blockui-content")]'
-    );
+    const blockuiContent = await page.$x('//div[contains(@class, "ui-blockui-content")]');
     if (blockuiContent.length !== 2) {
-      logger.warn(
-        `BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`
-      );
+      logger.warn(`BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`);
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
     }
-    const blockuiContent0 = await page.evaluate(
-      (el) => el.outerHTML,
-      blockuiContent[0]
-    ); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
-    const blockuiContent1 = await page.evaluate(
-      (el) => el.outerHTML,
-      blockuiContent[1]
-    ); // <div id="workResultView:j_idt57" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 285.796px; top: 227.8px; z-index: 1007; display: block; opacity: 0.0103886;"><img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt=""></div>
+    const blockuiContent0 = await page.evaluate((el) => el.outerHTML, blockuiContent[0]); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
+    const blockuiContent1 = await page.evaluate((el) => el.outerHTML, blockuiContent[1]); // <div id="workResultView:j_idt57" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 285.796px; top: 227.8px; z-index: 1007; display: block; opacity: 0.0103886;"><img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt=""></div>
     if (!blockuiContent0.includes("workResultView:j_idt50:j_idt51")) {
-      logger.warn(
-        `BUG: workResultView:j_idt50:j_idt51 not found; found instead: ${blockuiContent0}`
-      );
+      logger.warn(`BUG: workResultView:j_idt50:j_idt51 not found; found instead: ${blockuiContent0}`);
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
     }
     if (!blockuiContent1.includes("workResultView:j_idt57")) {
-      logger.warn(
-        `BUG: workResultView:j_idt57 not found; found instead: ${blockuiContent1}`
-      );
+      logger.warn(`BUG: workResultView:j_idt57 not found; found instead: ${blockuiContent1}`);
       logger.warn(`wait 5s and return`);
       await page.waitForTimeout(5000);
       return "error";
@@ -132,10 +115,7 @@ async function waitLoadingGIF(
 // ページ遷移は page.waitForNavigation() で拾えないので、読み込みGIFが現れて消え
 // るのを検出することにする
 // XXX: 30s はてきとう
-export async function waitLoading(
-  page: puppeteer.Page,
-  waitGIFMs = 30_000
-): Promise<void> {
+export async function waitLoading(page: puppeteer.Page, waitGIFMs = 30_000): Promise<void> {
   const resultAppaer = await waitLoadingGIF(page, "appear", waitGIFMs);
   if (resultAppaer === "timeout") {
     return;
@@ -148,28 +128,18 @@ export async function waitLoading(
   await page.waitForTimeout(500); // XXX: 500ms はてきとう
 }
 
-export async function selectYearMonth(
-  page: puppeteer.Page,
-  year: number,
-  month: number
-): Promise<void> {
+export async function selectYearMonth(page: puppeteer.Page, year: number, month: number): Promise<void> {
   const msg = "カレンダーの形式が不正です";
 
   // select year
   {
     const year_ = year.toString();
     // <select class="ui-datepicker-year" data-handler="selectYear" data-event="change" aria-label="select year">
-    const elem = await utils.$x1(
-      page,
-      '//select[@class="ui-datepicker-year"]',
-      msg
-    );
+    const elem = await utils.$x1(page, '//select[@class="ui-datepicker-year"]', msg);
     logger.debug(`elem.select(${year_})`);
     const elems2 = await elem.select(year_);
     if (elems2.length !== 1) {
-      throw new KousuError(
-        `failed to select year (elems2.length: ${elems2.length})`
-      );
+      throw new KousuError(`failed to select year (elems2.length: ${elems2.length})`);
     }
     if (elems2[0] !== year_) {
       throw new KousuError(`failed to select year (elems2[0]: ${elems2[0]})`);
@@ -181,17 +151,11 @@ export async function selectYearMonth(
   {
     const month2 = (month - 1).toString();
     // <select class="ui-datepicker-month" data-handler="selectMonth" data-event="change" aria-label="select month">
-    const elem = await utils.$x1(
-      page,
-      '//select[@class="ui-datepicker-month"]',
-      msg
-    );
+    const elem = await utils.$x1(page, '//select[@class="ui-datepicker-month"]', msg);
     logger.debug(`elem.select(${month2})`);
     const elems2 = await elem.select(month2);
     if (elems2.length !== 1) {
-      throw new KousuError(
-        `failed to select month2 (elems2.length: ${elems2.length})`
-      );
+      throw new KousuError(`failed to select month2 (elems2.length: ${elems2.length})`);
     }
     if (elems2[0] !== month2) {
       throw new KousuError(`failed to select month2 (elems2[0]: ${elems2[0]})`);

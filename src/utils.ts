@@ -39,13 +39,7 @@ export function prevMonthFirst(): string {
   // ok even for January
   // new Date(2006, 0, 2)  -> 2006-01-02
   // new Date(2006, -1, 2) -> 2005-12-02
-  const d = new Date(
-    now.getFullYear(),
-    now.getMonth() - 1,
-    1,
-    0,
-    -now.getTimezoneOffset()
-  );
+  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, -now.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 }
 
@@ -54,13 +48,7 @@ export function prevMonthFirst(): string {
  */
 export function prevMonthLast(): string {
   const now = new Date();
-  const d = new Date(
-    now.getFullYear(),
-    now.getMonth(),
-    0,
-    0,
-    -now.getTimezoneOffset()
-  );
+  const d = new Date(now.getFullYear(), now.getMonth(), 0, 0, -now.getTimezoneOffset());
   return d.toISOString().slice(0, 10);
 }
 
@@ -84,8 +72,7 @@ export const oclifFlags = {
     // allowNo: false,
   }),
   "ma-url": oclifCommand.flags.string({
-    description:
-      "MA-EYESログイン画面のURL (environment variable: KOUSU_MA_URL)",
+    description: "MA-EYESログイン画面のURL (environment variable: KOUSU_MA_URL)",
     required: true,
     env: "KOUSU_MA_URL",
   }),
@@ -101,8 +88,7 @@ export const oclifFlags = {
   }),
   month: oclifCommand.flags.string({
     // IFlagBase
-    description:
-      "処理する月 (e.g. 2006-01) (environment variable: KOUSU_MONTH)",
+    description: "処理する月 (e.g. 2006-01) (environment variable: KOUSU_MONTH)",
     env: "KOUSU_MONTH",
     parse: (input, context) => {
       const match = input.match(/^(\d{4})-(\d{2})$/);
@@ -113,14 +99,10 @@ export const oclifFlags = {
       context.year = parseInt(match[1], 10);
       context.month = parseInt(match[2], 10);
       if (isNaN(context.year)) {
-        throw new KousuError(
-          `KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid year)`
-        );
+        throw new KousuError(`KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid year)`);
       }
       if (isNaN(context.month)) {
-        throw new KousuError(
-          `KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid month)`
-        );
+        throw new KousuError(`KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid month)`);
       }
       return input;
     },
@@ -209,10 +191,7 @@ export async function puppeteerBrowserPage(
 
 // @template:cookie
 // web_cookie.md
-export async function puppeteerCookieLoad(
-  page: puppeteer.Page,
-  cookiePath: string
-): Promise<void> {
+export async function puppeteerCookieLoad(page: puppeteer.Page, cookiePath: string): Promise<void> {
   if (!fs.existsSync(cookiePath)) {
     // TODO: catch ENOENT instead
     throw new KousuError(`cookie file (${cookiePath}) not found`);
@@ -226,10 +205,7 @@ export async function puppeteerCookieLoad(
   }
 }
 
-export async function puppeteerCookieSave(
-  page: puppeteer.Page,
-  cookiePath: string
-): Promise<void> {
+export async function puppeteerCookieSave(page: puppeteer.Page, cookiePath: string): Promise<void> {
   logger.info("page.cookies()");
   const cookiesObject = await page.cookies();
   const s = JSON.stringify(cookiesObject, null, 2) + "\n";
@@ -256,13 +232,9 @@ export async function $xn(
     return elementHandles;
   }
   if (errMsg === "") {
-    throw new KousuError(
-      `BUG: '$x(\`${expression}\`').length is not ${n}, actually ${elementHandles.length}`
-    );
+    throw new KousuError(`BUG: '$x(\`${expression}\`').length is not ${n}, actually ${elementHandles.length}`);
   } else {
-    throw new KousuError(
-      `BUG: ${errMsg}; $x(\`${expression}'\`.length is not ${n}, actually ${elementHandles.length}`
-    );
+    throw new KousuError(`BUG: ${errMsg}; $x(\`${expression}'\`.length is not ${n}, actually ${elementHandles.length}`);
   }
 }
 
@@ -280,11 +252,7 @@ export async function $x1(
 // https://github.com/jonschlinkert/isobject/blob/master/index.js
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function isObject(value: any): boolean {
-  return (
-    value !== null &&
-    typeof value === "object" &&
-    Array.isArray(value) === false
-  );
+  return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }
 
 // @template:sleep
@@ -322,12 +290,8 @@ export async function run(run2: () => Promise<never>): Promise<never> {
       ) {
         logger.warn(`error.constructor.name: ${error.constructor.name}`);
       }
-      if (
-        !(error instanceof KousuError || error instanceof oclifErrors.CLIError)
-      ) {
-        logger.error(
-          `unexpected error: ${error.message}\nstack trace:\n${error.stack}`
-        );
+      if (!(error instanceof KousuError || error instanceof oclifErrors.CLIError)) {
+        logger.error(`unexpected error: ${error.message}\nstack trace:\n${error.stack}`);
       }
       throw error;
     }
