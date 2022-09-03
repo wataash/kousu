@@ -2,7 +2,7 @@
 
 /* eslint-disable no-await-in-loop */
 
-import * as fs from "fs";
+import * as fs from "node:fs";
 
 import * as oclifCommand from "@oclif/command";
 import { Command } from "@oclif/command";
