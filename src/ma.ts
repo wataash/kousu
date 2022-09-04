@@ -35,21 +35,21 @@ export async function login(
     return;
   }
 
-  await page.evaluate(() => {
-    (document.getElementById("loginView:userCode:input") as any).value = "";
-  });
-  await page.evaluate(() => {
-    (document.getElementById("loginView:password:input") as any).value = "";
-  });
-  await page.type("#loginView\\:userCode\\:input", user, {
-    delay: 0.5,
-  });
-  await page.type("#loginView\\:password\\:input", pass, {
-    delay: 0.5,
-  });
-  logger.debug('page.click("#loginView\\:j_idt32")');
+  const inputUser = await utils.$x1(
+    page,
+    `//input[@data-p-label="ユーザコード"]`,
+    "「ユーザーコード」のinput elementが見つかりません"
+  );
+  await page.evaluate((el, user) => (el.value = user), inputUser as unknown as HTMLInputElement, user);
+  const inputPass = await utils.$x1(
+    page,
+    `//input[@data-p-label="パスワード"]`,
+    "「パスワード」のinput elementが見つかりません"
+  );
+  await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, pass);
+  const button = await utils.$x1(page, `//div[@class="login-actions"]/button`, "「ログイン」ボタンが見つかりません");
   // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
-  await Promise.all([page.waitForNavigation(), page.click("#loginView\\:j_idt32")]);
+  await Promise.all([page.waitForNavigation(), (button as unknown as HTMLButtonElement).click()]);
   if (pathCookieSave !== null) {
     await utils.puppeteerCookieSave(page, pathCookieSave);
   }
