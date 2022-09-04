@@ -17,7 +17,7 @@ import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";
 
-export async function run2(args: Args, argsGet: ArgsGet): Promise<number> {
+export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
   // [XXX:typescript-eslint#2098]
   const tmp = await utils.puppeteerBrowserPage(
     args.ignoreHttps,

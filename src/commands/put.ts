@@ -14,7 +14,7 @@ import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";
 
-export async function run2(args: Args, argsPut: ArgsPut): Promise<number> {
+export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
   let compat: "0.1.0" | null = null;
 
   const kousu: Kousu | Kousu010 = (() => {

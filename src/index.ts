@@ -15,9 +15,9 @@ import * as awaitNotify from "await-notify";
 import * as commander from "commander";
 import { program } from "commander";
 
-import { run2 as commandGet } from "./commands/get";
-import { run2 as commandImportKinmu } from "./commands/import-kinmu";
-import { run2 as commandPut } from "./commands/put";
+import { run as commandGet } from "./commands/get";
+import { run as commandImportKinmu } from "./commands/import-kinmu";
+import { run as commandPut } from "./commands/put";
 import * as common from "./common";
 import { KousuError } from "./common";
 import * as utils from "./utils";
