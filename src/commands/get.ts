@@ -46,144 +46,144 @@ export default class Get extends Command {
     }),
   };
 
-  async run2(): Promise<never> {
-    // hack: validate month.default value with month.parse() (see [XXX default])
-    if (process.env.KOUSU_MONTH === undefined) {
-      process.env.KOUSU_MONTH = utils.prevMonth();
-    }
-    const parseResult = this.parse(Get);
-    const flgs = parseResult.flags;
-    const year = this.year;
-    const month = this.month;
+async run2(): Promise<never> {
+  // hack: validate month.default value with month.parse() (see [XXX default])
+  if (process.env.KOUSU_MONTH === undefined) {
+    process.env.KOUSU_MONTH = utils.prevMonth();
+  }
+  const parseResult = this.parse(Get);
+  const flgs = parseResult.flags;
+  const year = this.year;
+  const month = this.month;
 
-    if ("out-csv" in flgs) {
-      throw new KousuError("--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました");
-    }
-    if ("out-json" in flgs) {
-      throw new KousuError("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました");
-    }
+  if ("out-csv" in flgs) {
+    throw new KousuError("--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました");
+  }
+  if ("out-json" in flgs) {
+    throw new KousuError("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました");
+  }
 
-    // [XXX:typescript-eslint#2098]
-    const tmp = await utils.puppeteerBrowserPage(flgs);
-    const browser = tmp[0] as puppeteer.Browser;
-    const page = tmp[1] as puppeteer.Page;
+  // [XXX:typescript-eslint#2098]
+  const tmp = await utils.puppeteerBrowserPage(flgs);
+  const browser = tmp[0] as puppeteer.Browser;
+  const page = tmp[1] as puppeteer.Page;
 
-    await ma.login(
-      page,
-      flgs["ma-url"],
-      flgs["ma-user"],
-      flgs["ma-pass"],
-      flgs["puppeteer-cookie-load"],
-      flgs["puppeteer-cookie-save"]
-    );
-    if ("puppeteer-cookie-save" in parseResult.flags) {
-      logger.info("cookie-save done;");
-      await browser.close();
-      logger.debug("bye");
-      this.exit(0);
-    }
-
-    await ma.selectYearMonth(page, year, month);
-
-    // [{
-    //   date: "7/27(月)";
-    //   begin: "15:04";
-    //   end: "15:04";
-    //   yokujitsu: false;
-    //   kyukei: 0;
-    //   yasumi: "";
-    //   sagyou: 0;
-    //   fumei: 0;
-    //   jisseki: {
-    //     proj1: 0;
-    //   }
-    // }
-    const kinmuJissekis: (Kinmu & Jisseki)[] = [];
-
-    const projects: { [projectId: string]: ProjectName } = {};
-
-    const elemsCalendarDate = await utils.$x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-    for (let i = 0; i < elemsCalendarDate.length; i++) {
-      // click monday
-      // see [XXX-$x-again]
-      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-      const elemDate = elemsCalendarDate2[i];
-      const txt = await page.evaluate((el) => el.innerText, elemDate);
-      // nbsp
-      if (txt === "\u00A0") {
-        continue;
-      }
-      if (i % 7 !== 0 && txt !== "1") {
-        // not monday nor 1st
-        continue;
-      }
-      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-      await Promise.all([ma.waitLoading(page), elemDate.click()]);
-
-      const kinmus = await (async () => {
-        const elem = await utils.$x1(page, `//table[@id="workResultView:j_idt69"]`, "勤務時間表の形式が不正です");
-        const html = await elem.evaluate((body) => body.outerHTML);
-        const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
-        return kinmus;
-      })();
-
-      // [XXX:typescript-eslint#2098]
-      const tmp = await (async () => {
-        const elem = await utils.$x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
-        const html = await elem.evaluate((body) => body.outerHTML);
-        return parseWeekJisseki(html);
-      })();
-      const jissekis = tmp[0] as Jisseki[];
-      const projects_ = tmp[1] as { [projectId: string]: ProjectName };
-
-      if (kinmus.length !== 7) {
-        logger.error(`勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`);
-      }
-      if (jissekis.length !== 7) {
-        logger.error(`工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`);
-      }
-      // TODO: projects_ が全ての週で一致するか確認
-
-      for (const [i, kinmu] of kinmus.entries()) {
-        if (kinmu === null) {
-          continue;
-        }
-        kinmuJissekis.push(Object.assign({}, kinmu, jissekis[i]));
-      }
-      Object.assign(projects, projects_);
-
-      logger.debug("next");
-    }
-
-    // {
-    //   "version": "0.3.0",
-    //   "projects": {
-    //     "proj1": "proj1 name"
-    //     "proj2": "proj2 name"
-    //   },
-    //   "jissekis": [
-    //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":0,"yasumi":"全休","sagyou":0,"fumei":0,"jisseki":{"proj1":0,"proj2":0}},
-    //     {"date":"1/2(土)",...},
-    //     ...
-    //   ]
-    // }
-    // const json = `${JSON.stringify(kinmuJissekis, null, 2)}\n`;
-    const json = `{
-  "version": "0.3.0",
-  "projects": ${JSON.stringify(projects, null, 2)
-    .split("\n")
-    .map((row) => `  ${row}`)
-    .join("\n")},
-  "jissekis": [\n${kinmuJissekis.map((kousu) => `    ${JSON.stringify(kousu)}`).join(",\n")}
-  ]
- }
- `;
-
-    fs.writeFileSync(parseResult.args.file, json);
-
+  await ma.login(
+    page,
+    flgs["ma-url"],
+    flgs["ma-user"],
+    flgs["ma-pass"],
+    flgs["puppeteer-cookie-load"],
+    flgs["puppeteer-cookie-save"]
+  );
+  if ("puppeteer-cookie-save" in parseResult.flags) {
+    logger.info("cookie-save done;");
+    await browser.close();
     logger.debug("bye");
     this.exit(0);
   }
+
+  await ma.selectYearMonth(page, year, month);
+
+  // [{
+  //   date: "7/27(月)";
+  //   begin: "15:04";
+  //   end: "15:04";
+  //   yokujitsu: false;
+  //   kyukei: 0;
+  //   yasumi: "";
+  //   sagyou: 0;
+  //   fumei: 0;
+  //   jisseki: {
+  //     proj1: 0;
+  //   }
+  // }
+  const kinmuJissekis: (Kinmu & Jisseki)[] = [];
+
+  const projects: { [projectId: string]: ProjectName } = {};
+
+  const elemsCalendarDate = await utils.$x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+  for (let i = 0; i < elemsCalendarDate.length; i++) {
+    // click monday
+    // see [XXX-$x-again]
+    const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+    const elemDate = elemsCalendarDate2[i];
+    const txt = await page.evaluate((el) => el.innerText, elemDate);
+    // nbsp
+    if (txt === "\u00A0") {
+      continue;
+    }
+    if (i % 7 !== 0 && txt !== "1") {
+      // not monday nor 1st
+      continue;
+    }
+    logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
+    await Promise.all([ma.waitLoading(page), elemDate.click()]);
+
+    const kinmus = await (async () => {
+      const elem = await utils.$x1(page, `//table[@id="workResultView:j_idt69"]`, "勤務時間表の形式が不正です");
+      const html = await elem.evaluate((body) => body.outerHTML);
+      const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
+      return kinmus;
+    })();
+
+    // [XXX:typescript-eslint#2098]
+    const tmp = await (async () => {
+      const elem = await utils.$x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
+      const html = await elem.evaluate((body) => body.outerHTML);
+      return parseWeekJisseki(html);
+    })();
+    const jissekis = tmp[0] as Jisseki[];
+    const projects_ = tmp[1] as { [projectId: string]: ProjectName };
+
+    if (kinmus.length !== 7) {
+      logger.error(`勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`);
+    }
+    if (jissekis.length !== 7) {
+      logger.error(`工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`);
+    }
+    // TODO: projects_ が全ての週で一致するか確認
+
+    for (const [i, kinmu] of kinmus.entries()) {
+      if (kinmu === null) {
+        continue;
+      }
+      kinmuJissekis.push(Object.assign({}, kinmu, jissekis[i]));
+    }
+    Object.assign(projects, projects_);
+
+    logger.debug("next");
+  }
+
+  // {
+  //   "version": "0.3.0",
+  //   "projects": {
+  //     "proj1": "proj1 name"
+  //     "proj2": "proj2 name"
+  //   },
+  //   "jissekis": [
+  //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":0,"yasumi":"全休","sagyou":0,"fumei":0,"jisseki":{"proj1":0,"proj2":0}},
+  //     {"date":"1/2(土)",...},
+  //     ...
+  //   ]
+  // }
+  // const json = `${JSON.stringify(kinmuJissekis, null, 2)}\n`;
+  const json = `{
+"version": "0.3.0",
+"projects": ${JSON.stringify(projects, null, 2)
+  .split("\n")
+  .map((row) => `  ${row}`)
+  .join("\n")},
+"jissekis": [\n${kinmuJissekis.map((kousu) => `    ${JSON.stringify(kousu)}`).join(",\n")}
+]
+}
+`;
+
+  fs.writeFileSync(parseResult.args.file, json);
+
+  logger.debug("bye");
+  this.exit(0);
+}
 
   async run(): Promise<never> {
     await utils.run(this.run2.bind(this));
