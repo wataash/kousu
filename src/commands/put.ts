@@ -46,15 +46,12 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
       return acc;
     }, {} as { [date: string]: typeof kousu.jissekis[number] });
   })();
-  // [XXX:typescript-eslint#2098]
-  const tmp = await utils.puppeteerBrowserPage(
+  const [browser, page] = await utils.puppeteerBrowserPage(
     args.ignoreHttps,
     args.zPuppeteerConnectUrl || null,
     args.zPuppeteerLaunchHandleSigint,
     args.zPuppeteerLaunchHeadless
   );
-  const browser = tmp[0] as puppeteer.Browser;
-  const page = tmp[1] as puppeteer.Page;
 
   await ma.login(page, args.maUrl, args.maUser, args.maPass, args.zPuppeteerCookieLoad, args.zPuppeteerCookieSave);
   if ("zPuppeteerCookieSave" in args) {

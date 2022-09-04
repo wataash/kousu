@@ -18,15 +18,12 @@ import * as utils from "../utils";
 import { logger } from "../utils";
 
 export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
-  // [XXX:typescript-eslint#2098]
-  const tmp = await utils.puppeteerBrowserPage(
+  const [browser, page] = await utils.puppeteerBrowserPage(
     args.ignoreHttps,
     args.zPuppeteerConnectUrl || null,
     args.zPuppeteerLaunchHandleSigint,
     args.zPuppeteerLaunchHeadless
   );
-  const browser = tmp[0] as puppeteer.Browser;
-  const page = tmp[1] as puppeteer.Page;
 
   await ma.login(page, args.maUrl, args.maUser, args.maPass, args.zPuppeteerCookieLoad, args.zPuppeteerCookieSave);
   if ("zPuppeteerCookieSave" in args) {
@@ -80,14 +77,11 @@ export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
       return kinmus;
     })();
 
-    // [XXX:typescript-eslint#2098]
-    const tmp = await (async () => {
+    const [jissekis, projects_] = await (async () => {
       const elem = await utils.$x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
       const html = await elem.evaluate((body) => body.outerHTML);
       return parseWeekJisseki(html);
     })();
-    const jissekis = tmp[0] as Jisseki[];
-    const projects_ = tmp[1] as { [projectId: string]: ProjectName };
 
     if (kinmus.length !== 7) {
       logger.error(`勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`);
@@ -379,12 +373,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 // -----------------------------------------------------------------------------
 // 工数実績入力表パース
 
-// [XXX:typescript-eslint#2098]: tuple type breaks eslint
-// https://github.com/typescript-eslint/typescript-eslint/issues/2098
-// $ npx eslint src/commands/get.ts
-// /home/wsh/qjs/tesjs/proj/kousu/src/commands/get.ts
-//   0:0  error  Parsing error: Cannot read property 'map' of undefined
-export function parseWeekJisseki(html: string): any /* [Jisseki[], { [projectId: string]: ProjectName }] */ {
+export function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: ProjectName }] {
   const jissekis: Jisseki[] = [];
   const projects: { [projectId: string]: ProjectName } = {};
 

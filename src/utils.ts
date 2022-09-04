@@ -59,13 +59,12 @@ export function prevMonth(): string {
 // -------------------------------------------------------------------------------------------------
 // puppeteer
 
-// [XXX:typescript-eslint#2098]
 export async function puppeteerBrowserPage(
   ignoreHTTPSErrors: boolean,
   puppeteerConnectUrl: string | null,
   puppeteerLaunchHandleSIGINT: boolean,
   puppeteerLaunchHeadless: boolean
-): Promise<any> /* Promise<[puppeteer.Browser, puppeteer.Page]> */ {
+): Promise<[puppeteer.Browser, puppeteer.Page]> {
   logger.debug("open chromium");
 
   const browser = await (async () => {
