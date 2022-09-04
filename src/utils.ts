@@ -1,21 +1,21 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-warning-comments */
 
 import * as fs from "node:fs";
 import * as inspector from "node:inspector";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
 
-import * as types from "./common";
 import { KousuError } from "./common";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ElementHandle } from "puppeteer";
 
 // @template:logger
 process.env.LOG_PRETTY = "1";
+// eslint-disable-next-line @typescript-eslint/no-var-requires
 const loggerLib = require("./logger");
 interface LoggerStacktrace {
   errors(message: any, ...args: any[]): void;

@@ -5,10 +5,12 @@
 
 // @template:error:v2
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let logCb: (s: string) => void = (_s: string) => {
   // nop
 };
 // logging cb with stack trace
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 let logStackCb: (s: string) => void = (_s: string) => {
   // nop
 };

@@ -2,14 +2,12 @@
 
 /* eslint-disable no-await-in-loop */
 
-import type * as puppeteer from "puppeteer";
-
-import { KousuError } from "./common";
 import { Args, ArgsImportKinmu } from "./index";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";
 
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 export async function run(args: Args, argsImportKinmu: ArgsImportKinmu): Promise<number> {
   const [browser, page] = await utils.puppeteerBrowserPage(
     args.ignoreHttps,

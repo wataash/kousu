@@ -4,8 +4,6 @@
 
 import * as fs from "node:fs";
 
-import type * as puppeteer from "puppeteer";
-
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./command-get";
 import { KousuError } from "./common";

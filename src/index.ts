@@ -2,14 +2,9 @@
 
 // SPDX-License-Identifier: Apache-2.0
 
-import * as assert from "node:assert";
-import * as child_process from "node:child_process";
-import * as fs from "node:fs";
-import * as net from "node:net";
-import * as os from "node:os";
 import * as path from "node:path";
-import * as url from "node:url";
 
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
 // @ts-ignore
 import * as awaitNotify from "await-notify";
 import * as commander from "commander";
@@ -30,13 +25,14 @@ const initialize = new awaitNotify.Subject();
 // -----------------------------------------------------------------------------
 // cli
 
-const ARGV = process.argv.slice(2);
 const VERSION = "1.0.0";
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 function increaseVerbosity(value: string /* actually undefined */, previous: number): number {
   return previous + 1;
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 function parseMonth(value: string, previous: unknown): [number, number] {
   const match = value.match(/^(\d{4})-(\d{2})$/);
   if (match === null) {
@@ -122,8 +118,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e.constructor.name === "KousuError") {
-        // assert(e instanceof KousuError)
+      if (e instanceof KousuError) {
+        // assert(e.constructor.name === "KousuError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);
@@ -133,6 +129,7 @@ program
     "breakpoint".match(/breakpoint/);
   });
 
+/* eslint-disable @typescript-eslint/no-empty-interface */
 export interface ArgsImportKinmu {}
 
 // prettier-ignore
@@ -161,12 +158,14 @@ program
     "breakpoint".match(/breakpoint/);
   });
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 function errorInCsv(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
     "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました"
   );
 }
 
+/* eslint-disable @typescript-eslint/no-unused-vars */
 function errorInJson(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
     "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました"

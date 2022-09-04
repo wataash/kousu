@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: Apache-2.0
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
 /* eslint-disable no-await-in-loop */
 /* eslint-disable no-warning-comments */
 
 import * as fs from "node:fs";
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
 import * as xmldom from "@xmldom/xmldom";
 
@@ -198,11 +197,6 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
     return xpath.select(expression, node);
-  };
-
-  const x1 = (expression: string, node: any): ReturnType<typeof xpath.select1> => {
-    logger.debug(`xpath.select1(\`${expression}\`)`);
-    return xpath.select1(expression, node);
   };
 
   const doc = new xmldom.DOMParser({

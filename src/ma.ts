@@ -83,8 +83,7 @@ async function waitLoadingGIF(
       await utils.sleep(5000);
       return "error";
     }
-    const blockuiContent0 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[0]); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
-    const blockuiContent1 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[1]); // <div id="workResultView:j_idt57" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 285.796px; top: 227.8px; z-index: 1007; display: block; opacity: 0.0103886;"><img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt=""></div>
+    const blockuiContent1 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[1]);
     if (kind === "appear" && blockuiContent1.includes("display: block")) {
       // logger.debug("appears, return");
       return "success";
