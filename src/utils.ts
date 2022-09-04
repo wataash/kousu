@@ -3,11 +3,8 @@
 /* eslint-disable no-warning-comments */
 
 import * as fs from "node:fs";
+import * as inspector from "node:inspector";
 
-import * as oclifCommand from "@oclif/command";
-import * as oclifErrors from "@oclif/errors";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type * as oclifParser from "@oclif/parser";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
@@ -60,103 +57,24 @@ export function prevMonth(): string {
 }
 
 // -------------------------------------------------------------------------------------------------
-// oclif
-
-export const oclifFlags = {
-  help: oclifCommand.flags.help({ char: "h" }),
-
-  "ignore-https": oclifCommand.flags.boolean({
-    // IFlagBase
-    description: "HTTPSエラーを無視する",
-    // IBooleanFlag
-    // allowNo: false,
-  }),
-  "ma-url": oclifCommand.flags.string({
-    description: "MA-EYESログイン画面のURL (environment variable: KOUSU_MA_URL)",
-    required: true,
-    env: "KOUSU_MA_URL",
-  }),
-  "ma-user": oclifCommand.flags.string({
-    description: "MA-EYESのユーザー名 (environment variable: KOUSU_MA_USER)",
-    required: true,
-    env: "KOUSU_MA_USER",
-  }),
-  "ma-pass": oclifCommand.flags.string({
-    description: "MA-EYESのパスワード (environment variable: KOUSU_MA_PASS)",
-    required: true,
-    env: "KOUSU_MA_PASS",
-  }),
-  month: oclifCommand.flags.string({
-    // IFlagBase
-    description: "処理する月 (e.g. 2006-01) (environment variable: KOUSU_MONTH)",
-    env: "KOUSU_MONTH",
-    parse: (input, context) => {
-      const match = input.match(/^(\d{4})-(\d{2})$/);
-      if (match === null) {
-        throw new KousuError(`KOUSU_MONTH must be yyyy-mm (given: ${input})`);
-      }
-      // XXX: want return [year, month]
-      context.year = parseInt(match[1], 10);
-      context.month = parseInt(match[2], 10);
-      if (isNaN(context.year)) {
-        throw new KousuError(`KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid year)`);
-      }
-      if (isNaN(context.month)) {
-        throw new KousuError(`KOUSU_MONTH must be yyyy-mm (given: ${input}; invalid month)`);
-      }
-      return input;
-    },
-    // IOptionFlag
-    // [XXX default]: default will not be parse()ed
-    default: prevMonth(), // XXX: should be lazily evaluated
-  }),
-};
-
-// -------------------------------------------------------------------------------------------------
 // puppeteer
 
-export const oclifFlagsPuppeteer = {
-  // dev options (hidden)
-  "puppeteer-connect-url": oclifCommand.flags.string({
-    hidden: true,
-    exclusive: ["puppeteer-handle-sigint", "puppeteer-headless"],
-  }),
-  "puppeteer-cookie-save": oclifCommand.flags.string({
-    hidden: true,
-    exclusive: ["puppeteer-cookie-load"],
-  }),
-  "puppeteer-cookie-load": oclifCommand.flags.string({
-    hidden: true,
-    exclusive: ["puppeteer-cookie-save"],
-  }),
-  "puppeteer-handle-sigint": oclifCommand.flags.boolean({
-    hidden: true,
-    exclusive: ["puppeteer-connect-url"],
-    allowNo: true,
-    default: true,
-  }),
-  "puppeteer-headless": oclifCommand.flags.boolean({
-    hidden: true,
-    exclusive: ["puppeteer-connect-url"],
-    default: false,
-  }),
-};
-
-// not sure oclifParser.OutputFlags is correct -- but seems to work
-//
 // [XXX:typescript-eslint#2098]
 export async function puppeteerBrowserPage(
-  flgs: oclifParser.OutputFlags<typeof oclifFlags & typeof oclifFlagsPuppeteer>
+  ignoreHTTPSErrors: boolean,
+  puppeteerConnectUrl: string | null,
+  puppeteerLaunchHandleSIGINT: boolean,
+  puppeteerLaunchHeadless: boolean
 ): Promise<any> /* Promise<[puppeteer.Browser, puppeteer.Page]> */ {
   logger.debug("open chromium");
 
   const browser = await (async () => {
-    if ("puppeteer-connect-url" in flgs) {
+    if (puppeteerConnectUrl !== null) {
       return puppeteer.connect({
         // ConnectOptions
-        browserURL: flgs["puppeteer-connect-url"],
+        browserURL: puppeteerConnectUrl,
         // BrowserOptions
-        ignoreHTTPSErrors: flgs["ignore-https"],
+        ignoreHTTPSErrors,
         // これが無いと800x600になる
         // https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#puppeteerconnectoptions
         defaultViewport: null,
@@ -165,14 +83,14 @@ export async function puppeteerBrowserPage(
     }
     return puppeteer.launch({
       // LaunchOptions
-      handleSIGINT: flgs["puppeteer-handle-sigint"],
+      handleSIGINT: puppeteerLaunchHandleSIGINT,
       // ChromeArgOptions
-      headless: flgs["puppeteer-headless"],
+      headless: puppeteerLaunchHeadless,
       // https://peter.sh/experiments/chromium-command-line-switches/
       // args: ["--window-position=20,20", "--window-size=1400,800"],
       // devtools: true,
       // BrowserOptions
-      ignoreHTTPSErrors: flgs["ignore-https"],
+      ignoreHTTPSErrors,
       defaultViewport: null,
       // slowMo: 50, // for page.type
       // Timeoutable
@@ -187,6 +105,14 @@ export async function puppeteerBrowserPage(
   });
 
   return [browser, page];
+}
+
+export async function puppeteerClose(browser: puppeteer.Browser, disconnect: boolean): Promise<void> {
+  if (disconnect) {
+    browser.disconnect();
+  } else {
+    browser.close();
+  }
 }
 
 // @template:cookie
@@ -273,30 +199,25 @@ export async function sleepForever(): Promise<never> {
   }
 }
 
-export async function run(run2: () => Promise<never>): Promise<never> {
-  types.setErrorLogCallback((s: string) => logger.error(s));
-  types.setErrorLogStackCallback((s: string) => logger.errors(s));
+export function waitDebuggerAttach() {
+  // if (!process.execArgv.includes("--inspect")) {
+  if (inspector.url() === undefined) {
+    // not in debugger
+    return;
+  }
 
-  await (async () => {
-    try {
-      await run2();
-    } catch (error) {
-      if (
-        !(
-          error.constructor.name === "ExitError" ||
-          error.constructor.name === "KousuError" ||
-          error.constructor.name === "RequiredFlagError"
-        )
-      ) {
-        logger.warn(`error.constructor.name: ${error.constructor.name}`);
-      }
-      if (!(error instanceof KousuError || error instanceof oclifErrors.CLIError)) {
-        logger.error(`unexpected error: ${error.message}\nstack trace:\n${error.stack}`);
-      }
-      throw error;
+  const start = Date.now();
+  for (;;) {
+    // TODO: detect connected
+    // child_process.execSync(`lsof -nP -p ${process.pid}`, {stdio: "inherit", encoding: "utf8"});
+
+    const delta = Date.now() - start;
+    // delta: breaks at around 0-1000; so >2000 is enough
+    // webstorm: break this:
+    // - [ ] Suspend execution
+    // - [x] Evaluate and log: delta = 9999
+    if (delta > 2000) {
+      break;
     }
-  })();
-
-  // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
-  throw new KousuError("BUG: NOTREACHED", true);
+  }
 }

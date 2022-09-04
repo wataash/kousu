@@ -4,67 +4,21 @@
 
 import * as fs from "node:fs";
 
-import * as oclifCommand from "@oclif/command";
-import { Command } from "@oclif/command";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type * as oclifParser from "@oclif/parser";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./get";
 import { KousuError } from "../common";
+import { Args, ArgsPut } from "../index";
 import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";
 
-export default class Get extends Command {
-  year!: number;
-
-  month!: number;
-
-  static description = "MA-EYESにログインして工数実績を入力する";
-
-  static examples = undefined;
-
-  static args: oclifParser.args.Input = [{ name: "file", description: "入力するJSONのパス", required: true }];
-
-  static flags = {
-    ...utils.oclifFlags,
-    ...utils.oclifFlagsPuppeteer,
-
-    // hidden
-    "in-csv": oclifCommand.flags.string({
-      hidden: true,
-      env: "KOUSU_IN_CSV",
-    }),
-    "in-json": oclifCommand.flags.string({
-      hidden: true,
-      env: "KOUSU_IN_JSON",
-    }),
-  };
-
-async run2(): Promise<never> {
-  // hack: validate month.default value with month.parse() (see [XXX default])
-  if (process.env.KOUSU_MONTH === undefined) {
-    process.env.KOUSU_MONTH = utils.prevMonth();
-  }
-  const parseResult = this.parse(Get);
-  const flgs = parseResult.flags;
-  const year = this.year;
-  const month = this.month;
-
-  if ("in-csv" in flgs) {
-    throw new KousuError("--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました");
-  }
-  if ("in-json" in flgs) {
-    throw new KousuError("--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました");
-  }
-
+export async function run2(args: Args, argsPut: ArgsPut): Promise<number> {
   let compat: "0.1.0" | null = null;
 
   const kousu: Kousu | Kousu010 = (() => {
-    const j = JSON.parse(fs.readFileSync(parseResult.args.file, "utf8")) as Kousu | Kousu010;
+    const j = JSON.parse(fs.readFileSync(argsPut.file, "utf8")) as Kousu | Kousu010;
     const e = (msg: string) => {
       throw new KousuError(`invalid JSON: ${msg}`);
     };
@@ -93,26 +47,24 @@ async run2(): Promise<never> {
     }, {} as { [date: string]: typeof kousu.jissekis[number] });
   })();
   // [XXX:typescript-eslint#2098]
-  const tmp = await utils.puppeteerBrowserPage(flgs);
+  const tmp = await utils.puppeteerBrowserPage(
+    args.ignoreHttps,
+    args.zPuppeteerConnectUrl || null,
+    args.zPuppeteerLaunchHandleSigint,
+    args.zPuppeteerLaunchHeadless
+  );
   const browser = tmp[0] as puppeteer.Browser;
   const page = tmp[1] as puppeteer.Page;
 
-  await ma.login(
-    page,
-    flgs["ma-url"],
-    flgs["ma-user"],
-    flgs["ma-pass"],
-    flgs["puppeteer-cookie-load"],
-    flgs["puppeteer-cookie-save"]
-  );
-  if ("puppeteer-cookie-save" in parseResult.flags) {
+  await ma.login(page, args.maUrl, args.maUser, args.maPass, args.zPuppeteerCookieLoad, args.zPuppeteerCookieSave);
+  if ("zPuppeteerCookieSave" in args) {
     logger.info("cookie-save done;");
-    await browser.close();
+    await utils.puppeteerClose(browser, args.zPuppeteerConnectUrl !== undefined);
     logger.debug("bye");
-    this.exit(0);
+    return 0;
   }
 
-  await ma.selectYearMonth(page, year, month);
+  await ma.selectYearMonth(page, args.month[0], args.month[1]);
 
   const elemsCalendarDate = await utils.$x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
   for (let i = 0; i < elemsCalendarDate.length; i++) {
@@ -218,13 +170,7 @@ async run2(): Promise<never> {
     "breakpoint".match(/breakpoint/);
   }
 
+  await utils.puppeteerClose(browser, args.zPuppeteerConnectUrl !== undefined);
   logger.debug("bye");
-  this.exit(0);
-}
-
-  async run(): Promise<never> {
-    await utils.run(this.run2.bind(this));
-    // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
-    throw new KousuError("BUG: NOTREACHED", true);
-  }
+  return 0;
 }

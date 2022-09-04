@@ -2,64 +2,34 @@
 
 /* eslint-disable no-await-in-loop */
 
-import { Command } from "@oclif/command";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type * as oclifParser from "@oclif/parser";
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
 import { KousuError } from "../common";
+import { Args, ArgsImportKinmu } from "../index";
 import * as ma from "../ma";
 import * as utils from "../utils";
 import { logger } from "../utils";
 
-export default class MaKinmuImport extends Command {
-  year!: number;
-
-  month!: number;
-
-  static description = "MA-EYESにログインして「勤務時間取込」「保存」を行う";
-
-  static examples = undefined;
-
-  static args?: oclifParser.args.Input = undefined;
-
-  static flags = {
-    ...utils.oclifFlags,
-    ...utils.oclifFlagsPuppeteer,
-  };
-
-async run2(): Promise<never> {
-  // hack: validate month.default value with month.parse() (see [XXX default])
-  if (process.env.KOUSU_MONTH === undefined) {
-    process.env.KOUSU_MONTH = utils.prevMonth();
-  }
-  const parseResult = this.parse(MaKinmuImport);
-  const flgs = parseResult.flags;
-  const year = this.year;
-  const month = this.month;
-
+export async function run2(args: Args, argsImportKinmu: ArgsImportKinmu): Promise<number> {
   // [XXX:typescript-eslint#2098]
-  const tmp = await utils.puppeteerBrowserPage(flgs);
+  const tmp = await utils.puppeteerBrowserPage(
+    args.ignoreHttps,
+    args.zPuppeteerConnectUrl || null,
+    args.zPuppeteerLaunchHandleSigint,
+    args.zPuppeteerLaunchHeadless
+  );
   const browser = tmp[0] as puppeteer.Browser;
   const page = tmp[1] as puppeteer.Page;
 
-  await ma.login(
-    page,
-    flgs["ma-url"],
-    flgs["ma-user"],
-    flgs["ma-pass"],
-    flgs["puppeteer-cookie-load"],
-    flgs["puppeteer-cookie-save"]
-  );
-  if ("puppeteer-cookie-save" in parseResult.flags) {
+  await ma.login(page, args.maUrl, args.maUser, args.maPass, args.zPuppeteerCookieLoad, args.zPuppeteerCookieSave);
+  if ("zPuppeteerCookieSave" in args) {
     logger.info("cookie-save done;");
-    await browser.close();
+    await utils.puppeteerClose(browser, args.zPuppeteerConnectUrl !== undefined);
     logger.debug("bye");
-    this.exit(0);
+    return 0;
   }
 
-  await ma.selectYearMonth(page, year, month);
+  await ma.selectYearMonth(page, args.month[0], args.month[1]);
 
   // <table class="ui-datepicker-calendar">
   // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr")
@@ -131,13 +101,7 @@ async run2(): Promise<never> {
     logger.debug("next");
   }
 
+  await utils.puppeteerClose(browser, args.zPuppeteerConnectUrl !== undefined);
   logger.debug("bye");
-  this.exit(0);
-}
-
-  async run(): Promise<never> {
-    await utils.run(this.run2.bind(this));
-    // suppress: TS2534: A function returning 'never' cannot have a reachable end point.
-    throw new KousuError("BUG: NOTREACHED", true);
-  }
+  return 0;
 }

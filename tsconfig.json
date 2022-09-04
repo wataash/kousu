@@ -1,12 +1,18 @@
 {
   "compilerOptions": {
-    "declaration": true,
-    "importHelpers": true,
+    "moduleResolution": "node",
+    "target": "es2020", // for node 14 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
+    "lib": ["ES2020"], // for node 14 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
     "module": "commonjs",
-    "outDir": "lib",
-    "rootDir": "src",
+    "allowJs": true,
+    "outDir": "dist",
+    "inlineSourceMap": true,
+    "esModuleInterop": true,
+    "forceConsistentCasingInFileNames": true,
     "strict": true,
-    "target": "es2017"
+    "exactOptionalPropertyTypes": true,
+    "skipLibCheck": true,
+    "declaration": true,
   },
   "include": [
     "src/**/*"
