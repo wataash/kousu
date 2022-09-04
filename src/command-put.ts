@@ -7,12 +7,12 @@ import * as fs from "node:fs";
 import type * as puppeteer from "puppeteer";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
-import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./get";
-import { KousuError } from "../common";
-import { Args, ArgsPut } from "../index";
-import * as ma from "../ma";
-import * as utils from "../utils";
-import { logger } from "../utils";
+import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./command-get";
+import { KousuError } from "./common";
+import { Args, ArgsPut } from "./index";
+import * as ma from "./ma";
+import * as utils from "./utils";
+import { logger } from "./utils";
 
 export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
   let compat: "0.1.0" | null = null;

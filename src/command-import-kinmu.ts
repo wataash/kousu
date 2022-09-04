@@ -4,11 +4,11 @@
 
 import type * as puppeteer from "puppeteer";
 
-import { KousuError } from "../common";
-import { Args, ArgsImportKinmu } from "../index";
-import * as ma from "../ma";
-import * as utils from "../utils";
-import { logger } from "../utils";
+import { KousuError } from "./common";
+import { Args, ArgsImportKinmu } from "./index";
+import * as ma from "./ma";
+import * as utils from "./utils";
+import { logger } from "./utils";
 
 export async function run(args: Args, argsImportKinmu: ArgsImportKinmu): Promise<number> {
   const [browser, page] = await utils.puppeteerBrowserPage(

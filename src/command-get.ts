@@ -10,11 +10,11 @@ import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
 import * as xmldom from "@xmldom/xmldom";
 
-import { KousuError } from "../common";
-import { Args, ArgsGet } from "../index";
-import * as ma from "../ma";
-import * as utils from "../utils";
-import { logger } from "../utils";
+import { KousuError } from "./common";
+import { Args, ArgsGet } from "./index";
+import * as ma from "./ma";
+import * as utils from "./utils";
+import { logger } from "./utils";
 
 export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
   const [browser, page] = await utils.puppeteerBrowserPage(
