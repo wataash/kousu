@@ -27,7 +27,6 @@
     "await-notify": "^1.0.1",
     "commander": "^9.4.0",
     "date-format": "^4.0.13",
-    "jsdom": "^20.0.0",
     "log4js": "^6.6.1",
     "puppeteer": "^17.1.0",
     "xpath": "0.0.32"

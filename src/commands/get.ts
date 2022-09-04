@@ -5,7 +5,6 @@
 
 import * as fs from "node:fs";
 
-import * as jsdom from "jsdom";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 import * as xpath from "xpath";
@@ -193,12 +192,26 @@ export interface Kousu010 {
 // -----------------------------------------------------------------------------
 // 勤務表パース
 
-// TODO: rewrite with xpath
 export function parseWeekKinmu(html: string): (Kinmu | null)[] {
-  const dom = new jsdom.JSDOM(html);
-  const document = dom.window.document;
+  // TS2322
+  // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
+  const x = (expression: string, node: any): xpath.SelectedValue[] => {
+    // logger.debug(`xpath.select(\`${expression}\`)`);
+    return xpath.select(expression, node);
+  };
 
-  const trs = document.querySelectorAll("tr");
+  const x1 = (expression: string, node: any): ReturnType<typeof xpath.select1> => {
+    logger.debug(`xpath.select1(\`${expression}\`)`);
+    return xpath.select1(expression, node);
+  };
+
+  const doc = new xmldom.DOMParser({
+    errorHandler: () => {
+      /* nop; just to suppress error logs */
+    },
+  }).parseFromString(html);
+
+  const trs = x(`//tr`, doc);
   if (trs.length !== 6) {
     throw new KousuError(
       `BUG: 勤務時間表の形式が不正です (expected 6 trs (date 出社 退社 翌日 休憩 休み), found ${trs.length} trs)`,
@@ -214,16 +227,17 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   const datumYasumi: (string | null)[] = []; //     null     null     null     null     null     全休    全休
   // -> [{"date":"8/1(土)", "begin":"09:00", "end":"17:30", "yokujitu":false, "kyukei": "0.0", "yasumi":""|"全休"|"午前"|"午後"}]
 
-  const checkTds = (row: number, tds: NodeListOf<HTMLElementTagNameMap["td"]>, text0: string) => {
+  const checkTds = (row: number, tds: xpath.SelectedValue[], text0: string) => {
     if (tds.length !== 8) {
       throw new KousuError(
         `BUG: 勤務時間表の形式が不正です (expected 8 tds (header+月火水木金土日), found ${tds.length} tds)`,
         true
       );
     }
-    if (tds[0].textContent !== text0) {
+    // .data
+    if ((tds[0] as Element).textContent !== text0) {
       throw new KousuError(
-        `BUG: 勤務時間表の${row}行1列が "${text0}" でありません (found: ${tds[0].textContent})`,
+        `BUG: 勤務時間表の${row}行1列が "${text0}" でありません (found: ${(tds[0] as Element).textContent})`,
         true
       );
     }
@@ -233,11 +247,11 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 1;
     const kind = "日付";
-    const tds = trs[0].querySelectorAll("td");
+    const tds = x(`./td`, trs[0]);
     // debug: tds[6].innerHTML
     checkTds(row, tds, "");
     for (let i = 1; i < tds.length; i++) {
-      const txt = tds[i].textContent;
+      const txt = (tds[i] as Element).textContent;
       if (txt === null) {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`, true);
       }
@@ -253,14 +267,16 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 2;
     const kind = "出社";
-    const tds = trs[1].querySelectorAll("td");
+    const tds = x(`./td`, trs[1]);
     checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
-      const input = tds[i].querySelector("input");
-      if (input === null) {
+      const inputN = x(`.//input`, tds[i]) as Element[];
+      if (inputN.length === 0) {
+        // 前後の月
         datumBegin.push(null);
         continue;
       }
+      const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
@@ -273,14 +289,16 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 3;
     const kind = "退社";
-    const tds = trs[2].querySelectorAll("td");
+    const tds = x(`./td`, trs[2]);
     checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
-      const input = tds[i].querySelector("input");
-      if (input === null) {
+      const inputN = x(`.//input`, tds[i]) as Element[];
+      if (inputN.length === 0) {
+        // 前後の月
         datumEnd.push(null);
         continue;
       }
+      const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
@@ -293,14 +311,16 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 4;
     const kind = "翌日";
-    const tds = trs[3].querySelectorAll("td");
+    const tds = x(`./td`, trs[3]);
     checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
-      const input = tds[i].querySelector("input");
-      if (input === null) {
+      const inputN = x(`.//input`, tds[i]) as Element[];
+      if (inputN.length === 0) {
+        // 前後の月
         datumYokujitsu.push(null);
         continue;
       }
+      const input = inputN[0];
       const ariaChecked = input.getAttribute("aria-checked");
       if (ariaChecked !== "true" && ariaChecked !== "false") {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`, true);
@@ -313,14 +333,16 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 5;
     const kind = "休憩";
-    const tds = trs[4].querySelectorAll("td");
+    const tds = x(`./td`, trs[4]);
     checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
-      const input = tds[i].querySelector("input");
-      if (input === null) {
+      const inputN = x(`.//input`, tds[i]) as Element[];
+      if (inputN.length === 0) {
+        // 前後の月
         datumKyukei.push(null);
         continue;
       }
+      const input = inputN[0];
       const value = input.getAttribute("value");
       if (value === null) {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
@@ -333,19 +355,21 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
   {
     const row = 6;
     const kind = "休み";
-    const tds = trs[5].querySelectorAll("td");
+    const tds = x(`./td`, trs[5]);
     checkTds(row, tds, kind);
     for (let i = 1; i < tds.length; i++) {
-      const option = tds[i].querySelector('option[selected="selected"]');
-      if (option === null) {
+      const labelN = x(`.//label`, tds[i]) as Element[];
+      if (labelN.length === 0) {
+        // 前後の月
         datumYasumi.push(null);
         continue;
       }
-      const text = option.textContent;
-      if (text !== "" && text !== "全休" && text !== "午前" && text !== "午後") {
+      const label = labelN[0];
+      const text = label.textContent;
+      if (text !== "&nbsp;" && text !== "全休" && text !== "午前" && text !== "午後") {
         throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`, true);
       }
-      datumYasumi.push(text);
+      datumYasumi.push(text === "&nbsp;" ? "" : text);
     }
   }
 
