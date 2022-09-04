@@ -76,7 +76,7 @@ async function waitLoadingGIF(
     //   <!--                                                                                                                                                                                         ^^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
-    const blockuiContent = await page.$x('//div[contains(@class, "ui-blockui-content")]');
+    const blockuiContent = await page.$x(`//div[contains(@class, "ui-blockui-content")]`);
     if (blockuiContent.length !== 2) {
       logger.warn(`BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`);
       logger.warn(`wait 5s and return`);
@@ -139,7 +139,7 @@ export async function selectYearMonth(page: puppeteer.Page, year: number, month:
   {
     const month2 = (month - 1).toString();
     // <select class="ui-datepicker-month" data-handler="selectMonth" data-event="change" aria-label="select month">
-    const elem = await utils.$x1(page, '//select[@class="ui-datepicker-month"]', msg);
+    const elem = await utils.$x1(page, `//select[@class="ui-datepicker-month"]`, msg);
     logger.debug(`elem.select(${month2})`);
     const elems2 = await elem.select(month2);
     if (elems2.length !== 1) {
