@@ -146,7 +146,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
         }
         modified = true;
         logger.debug(`${date} ${project} ${kousu.projects[project]} ${timeJisseki}`);
-        await (elemDate as unknown as HTMLElement).click();
+        await (elem as unknown as HTMLElement).click();
         await page.keyboard.type(timeJisseki);
         // 値の確定・送信
         // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
