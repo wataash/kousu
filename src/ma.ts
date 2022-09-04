@@ -80,7 +80,7 @@ async function waitLoadingGIF(
     if (blockuiContent.length !== 2) {
       logger.warn(`BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`);
       logger.warn(`wait 5s and return`);
-      await page.waitForTimeout(5000);
+      await utils.sleep(5000);
       return "error";
     }
     const blockuiContent0 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[0]); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
@@ -94,7 +94,7 @@ async function waitLoadingGIF(
       return "success";
     }
     // logger.debug(`wait ${waitMs}ms (timeout: ${(timeoutMs - waitMs * (i - (i % 10))) / 1000}s)`);
-    await page.waitForTimeout(100);
+    await utils.sleep(100);
   }
   logger.debug("timeout, return");
   return "timeout";
@@ -108,12 +108,12 @@ export async function waitLoading(page: puppeteer.Page, waitGIFMs = 30_000): Pro
   if (resultAppaer === "timeout") {
     return;
   }
-  await page.waitForTimeout(500); // XXX: 500ms はてきとう
+  await utils.sleep(500); // XXX: 500ms はてきとう
   const resultDisappear = await waitLoadingGIF(page, "disappear", waitGIFMs);
   if (resultDisappear === "timeout") {
     return;
   }
-  await page.waitForTimeout(500); // XXX: 500ms はてきとう
+  await utils.sleep(500); // XXX: 500ms はてきとう
 }
 
 export async function selectYearMonth(page: puppeteer.Page, year: number, month: number): Promise<void> {
