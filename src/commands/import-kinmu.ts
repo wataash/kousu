@@ -59,7 +59,7 @@ export async function run(args: Args, argsImportKinmu: ArgsImportKinmu): Promise
     //   since DOM is updated within the loop (just try it if you don't get it).
     const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     const elemDate = elemsCalendarDate2[i];
-    const txt = await page.evaluate((el) => el.innerText, elemDate);
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
     if (txt === "\u00A0") {
       // nbsp
       continue;
@@ -69,8 +69,8 @@ export async function run(args: Args, argsImportKinmu: ArgsImportKinmu): Promise
       continue;
     }
     logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-    // await Promise.all([page.waitForNavigation(), elemDate.click()]); // halts
-    await elemDate.click();
+    // await Promise.all([page.waitForNavigation(), (elemDate as unknown as HTMLElement).click()]); // halts
+    await (elemDate as unknown as HTMLElement).click();
     await ma.waitLoading(page);
 
     // <button id="workResultView:j_idt52" name="workResultView:j_idt52" class="ui-button ..."

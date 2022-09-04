@@ -76,7 +76,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
     // see [XXX-$x-again]
     const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     const elemDate = elemsCalendarDate2[i];
-    const txt = await page.evaluate((el) => el.innerText, elemDate);
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
     // nbsp; 前後の月
     if (txt === "\u00A0") {
       continue;
@@ -86,7 +86,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
       continue;
     }
     logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-    await Promise.all([ma.waitLoading(page), elemDate.click()]);
+    await Promise.all([ma.waitLoading(page), (elemDate as unknown as HTMLElement).click()]);
 
     // (null | string)[7]
     // ["10/28(月)", ... "11/1(金)", "11/2(土)", "11/3(日)"]
@@ -98,7 +98,9 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
         8,
         "勤務時間表の形式が不正です"
       );
-      return Promise.all(elems.slice(1).map(async (elem) => elem.evaluate((el) => (el as HTMLElement).innerText)));
+      return Promise.all(
+        elems.slice(1).map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
+      );
     })();
 
     let modified = false;
@@ -111,7 +113,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
       // $x(`//tbody[@id="workResultView:items_data"]/tr/td[4]/text()`)
       const elemsProject = await utils.$x(page, `//tbody[@id="workResultView:items_data"]/tr/td[4]`);
       const projects = await Promise.all(
-        elemsProject.map(async (elem) => elem.evaluate((el) => (el as HTMLElement).innerText))
+        elemsProject.map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
       );
       for (const [iProj, project] of projects.entries()) {
         const timeJisseki = (() => {
@@ -137,27 +139,25 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
           `//tbody[@id="workResultView:items_data"]/tr[${iProj + 1}]/td[${iDate + 7}]`,
           "工数実績入力表の形式が不正です"
         );
-        // await elem.evaluate((el) => {
-        //   (el as HTMLElement).innerText = "9.9";
-        // });
-        const txt = await elem.evaluate((el) => (el as HTMLElement).innerText);
+        // await elem.evaluate((el) => (el as unknown as HTMLElement).innerText = "9.9");
+        const txt = await elem.evaluate((el) => (el as unknown as HTMLElement).innerText);
         if (txt === timeJisseki) {
           continue;
         }
         modified = true;
         logger.debug(`${date} ${project} ${kousu.projects[project]} ${timeJisseki}`);
-        await elem.click();
+        await (elemDate as unknown as HTMLElement).click();
         await page.keyboard.type(timeJisseki);
         // 値の確定・送信
         // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
         await Promise.all([
           ma.waitLoading(page),
           (
-            await utils.$x1(
+            (await utils.$x1(
               page,
               `//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`,
               "工数実績入力表の形式が不正です"
-            )
+            )) as unknown as HTMLElement
           ).click(),
         ]);
         "breakpoint".match(/breakpoint/);

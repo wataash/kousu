@@ -65,7 +65,7 @@ export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
     // see [XXX-$x-again]
     const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     const elemDate = elemsCalendarDate2[i];
-    const txt = await page.evaluate((el) => el.innerText, elemDate);
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
     // nbsp
     if (txt === "\u00A0") {
       continue;
@@ -75,18 +75,18 @@ export async function run(args: Args, argsGet: ArgsGet): Promise<number> {
       continue;
     }
     logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-    await Promise.all([ma.waitLoading(page), elemDate.click()]);
+    await Promise.all([ma.waitLoading(page), (elemDate as unknown as HTMLElement).click()]);
 
     const kinmus = await (async () => {
       const elem = await utils.$x1(page, `//table[@id="workResultView:j_idt69"]`, "勤務時間表の形式が不正です");
-      const html = await elem.evaluate((body) => body.outerHTML);
+      const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
       const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
       return kinmus;
     })();
 
     const [jissekis, projects_] = await (async () => {
       const elem = await utils.$x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
-      const html = await elem.evaluate((body) => body.outerHTML);
+      const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
       return parseWeekJisseki(html);
     })();
 

@@ -141,7 +141,7 @@ export async function puppeteerCookieSave(page: puppeteer.Page, cookiePath: stri
 export async function $x(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string
-): Promise<puppeteer.ElementHandle[]> {
+): ReturnType<typeof page.$x> {
   // logger.debug(`$x(\`${expression}\`)`);
   return page.$x(expression);
 }
@@ -151,7 +151,7 @@ export async function $xn(
   expression: string,
   n: number,
   errMsg: string
-): Promise<puppeteer.ElementHandle[]> {
+): ReturnType<typeof $x> {
   const elementHandles = await $x(page, expression);
   if (elementHandles.length === n) {
     return elementHandles;
@@ -167,7 +167,7 @@ export async function $x1(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
   errMsg: string
-): Promise<puppeteer.ElementHandle> {
+): Promise<puppeteer.ElementHandle<Node>> {
   return (await $xn(page, expression, 1, errMsg))[0];
 }
 
