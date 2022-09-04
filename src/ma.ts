@@ -67,13 +67,13 @@ async function waitLoadingGIF(
     // <!-- 通常時; loading GIF: disappear -->
     // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
     // <div id="workResultView:j_idt57"         class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 504.795px; top: 410.55px; z-index: 1327; display: none;">
-    //   <!--   ^^^^^^^^^^^^^^^^^^^^^^                                                                                                                                                                ^^^^^^^^^^^^^^ -->
+    //   <!--                                                                                                                                                                                         ^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
     // <!-- 画面遷移時; loading GIF: appear -->
     // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
     // <div id="workResultView:j_idt57"         class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 504.795px; top: 410.55px; z-index: 1256; display: block;">
-    //   <!--   ^^^^^^^^^^^^^^^^^^^^^^                                                                                                                                                                ^^^^^^^^^^^^^^^ -->
+    //   <!--                                                                                                                                                                                         ^^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
     const blockuiContent = await page.$x('//div[contains(@class, "ui-blockui-content")]');
@@ -85,18 +85,6 @@ async function waitLoadingGIF(
     }
     const blockuiContent0 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[0]); // <div id="workResultView:j_idt50:j_idt51" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow"></div>
     const blockuiContent1 = await page.evaluate((el) => (el as unknown as HTMLElement).outerHTML, blockuiContent[1]); // <div id="workResultView:j_idt57" class="ui-blockui-content ui-widget ui-widget-content ui-corner-all ui-helper-hidden ui-shadow" style="left: 285.796px; top: 227.8px; z-index: 1007; display: block; opacity: 0.0103886;"><img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt=""></div>
-    if (!blockuiContent0.includes("workResultView:j_idt50:j_idt51")) {
-      logger.warn(`BUG: workResultView:j_idt50:j_idt51 not found; found instead: ${blockuiContent0}`);
-      logger.warn(`wait 5s and return`);
-      await page.waitForTimeout(5000);
-      return "error";
-    }
-    if (!blockuiContent1.includes("workResultView:j_idt57")) {
-      logger.warn(`BUG: workResultView:j_idt57 not found; found instead: ${blockuiContent1}`);
-      logger.warn(`wait 5s and return`);
-      await page.waitForTimeout(5000);
-      return "error";
-    }
     if (kind === "appear" && blockuiContent1.includes("display: block")) {
       // logger.debug("appears, return");
       return "success";
