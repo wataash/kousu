@@ -15,10 +15,10 @@ export async function login(
   urlLogin: string,
   user: string,
   pass: string,
-  pathCookieLoad?: string,
-  pathCookieSave?: string
+  pathCookieLoad: string | null,
+  pathCookieSave: string | null
 ): Promise<void> {
-  if (pathCookieLoad !== undefined) {
+  if (pathCookieLoad !== null) {
     await utils.puppeteerCookieLoad(page, pathCookieLoad);
     logger.debug(`page.goto ${urlLogin}`);
     await Promise.all([page.waitForNavigation(), page.goto(urlLogin)]);
@@ -50,7 +50,7 @@ export async function login(
   logger.debug('page.click("#loginView\\:j_idt32")');
   // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
   await Promise.all([page.waitForNavigation(), page.click("#loginView\\:j_idt32")]);
-  if (pathCookieSave !== undefined) {
+  if (pathCookieSave !== null) {
     await utils.puppeteerCookieSave(page, pathCookieSave);
   }
 }

@@ -18,7 +18,14 @@ export async function run(args: Args, argsImportKinmu: ArgsImportKinmu): Promise
     args.zPuppeteerLaunchHeadless
   );
 
-  await ma.login(page, args.maUrl, args.maUser, args.maPass, args.zPuppeteerCookieLoad, args.zPuppeteerCookieSave);
+  await ma.login(
+    page,
+    args.maUrl,
+    args.maUser,
+    args.maPass,
+    args.zPuppeteerCookieLoad || null,
+    args.zPuppeteerCookieSave || null
+  );
   if ("zPuppeteerCookieSave" in args) {
     logger.info("cookie-save done;");
     await utils.puppeteerClose(browser, args.zPuppeteerConnectUrl !== undefined);
