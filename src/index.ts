@@ -25,7 +25,7 @@ const initialize = new awaitNotify.Subject();
 // -----------------------------------------------------------------------------
 // cli
 
-const VERSION = "2.0.2";
+const VERSION = "2.0.3";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 function increaseVerbosity(value: string /* actually undefined */, previous: number): number {
