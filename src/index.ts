@@ -77,11 +77,11 @@ program
   .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(parseMonth(utils.prevMonth(), null), utils.prevMonth()).argParser(parseMonth))
   .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false))
   .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(increaseVerbosity))
-  .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp(false).conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp(false).conflicts(["zPuppeteerCookieSave"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp(false).conflicts(["zPuppeteerCookieLoad"]))
-  .addOption(new commander.Option(" --no-z-puppeteer-launch-handle-sigint").hideHelp(false).conflicts(["zPuppeteerConnectUrl"]))
-  .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp(false).default(false).conflicts(["zPuppeteerConnectUrl"]))
+  .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp(true).conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
+  .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp(true).conflicts(["zPuppeteerCookieSave"]))
+  .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp(true).conflicts(["zPuppeteerCookieLoad"]))
+  .addOption(new commander.Option(" --no-z-puppeteer-launch-handle-sigint").hideHelp(true).conflicts(["zPuppeteerConnectUrl"]))
+  .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp(true).default(false).conflicts(["zPuppeteerConnectUrl"]))
   .alias(); // dummy
 
 function errorOutCsv(value: string /* actually undefined */, previous: undefined): never {
