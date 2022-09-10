@@ -147,8 +147,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e.constructor.name === "KousuError") {
-        // assert(e instanceof KousuError)
+      if (e instanceof KousuError) {
+        // assert(e.constructor.name === "KousuError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);
@@ -194,8 +194,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e.constructor.name === "KousuError") {
-        // assert(e instanceof KousuError)
+      if (e instanceof KousuError) {
+        // assert(e.constructor.name === "KousuError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);
