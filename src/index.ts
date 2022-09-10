@@ -126,7 +126,7 @@ program
       logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
       throw e;
     }
-    "breakpoint".match(/breakpoint/);
+    // NOTREACHED
   });
 
 /* eslint-disable @typescript-eslint/no-empty-interface */
@@ -155,7 +155,7 @@ program
       logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
       throw e;
     }
-    "breakpoint".match(/breakpoint/);
+    // NOTREACHED
   });
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
@@ -202,7 +202,7 @@ program
       logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
       throw e;
     }
-    "breakpoint".match(/breakpoint/);
+    // NOTREACHED
   });
 
 program.parse(process.argv);
