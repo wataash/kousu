@@ -2,7 +2,7 @@
 
 /* eslint-disable no-await-in-loop */
 
-import { Args, ArgsImportKinmu } from "./index";
+import type { Args, ArgsImportKinmu } from "./index";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";

@@ -10,7 +10,7 @@ import * as xpath from "xpath";
 import * as xmldom from "@xmldom/xmldom";
 
 import { KousuError } from "./common";
-import { Args, ArgsGet } from "./index";
+import type { Args, ArgsGet } from "./index";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";
