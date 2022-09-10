@@ -84,6 +84,35 @@ program
   .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp(true).default(false).conflicts(["zPuppeteerConnectUrl"]))
   .alias(); // dummy
 
+/* eslint-disable @typescript-eslint/no-empty-interface */
+export interface ArgsImportKinmu {}
+
+// prettier-ignore
+program
+  .command("import-kinmu")
+  .description("MA-EYESにログインして「勤務時間取込」「保存」を行う")
+  .allowExcessArguments(false)
+  .action(async (options: ArgsImportKinmu) => {
+    await initialize.wait(0);
+    try {
+      const exitCode = await commandImportKinmu(program.opts(), { ...options });
+      process.exit(exitCode);
+    } catch (e) {
+      if (!(e instanceof Error)) {
+        logger.errors("NOTREACHED");
+        throw e;
+      }
+      if (e instanceof KousuError) {
+        // assert(e.constructor.name === "KousuError")
+        process.exit(1);
+      }
+      logger.warn(`e.constructor.name: ${e.constructor.name}`);
+      logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
+      throw e;
+    }
+    // NOTREACHED
+  });
+
 function errorOutCsv(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
     "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
@@ -93,6 +122,20 @@ function errorOutCsv(value: string /* actually undefined */, previous: undefined
 function errorOutJson(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
     "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました"
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function errorInCsv(value: string /* actually undefined */, previous: undefined): never {
+  throw new commander.InvalidArgumentError(
+    "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました"
+  );
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function errorInJson(value: string /* actually undefined */, previous: undefined): never {
+  throw new commander.InvalidArgumentError(
+    "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました"
   );
 }
 
@@ -128,49 +171,6 @@ program
     }
     // NOTREACHED
   });
-
-/* eslint-disable @typescript-eslint/no-empty-interface */
-export interface ArgsImportKinmu {}
-
-// prettier-ignore
-program
-  .command("import-kinmu")
-  .description("MA-EYESにログインして「勤務時間取込」「保存」を行う")
-  .allowExcessArguments(false)
-  .action(async (options: ArgsImportKinmu) => {
-    await initialize.wait(0);
-    try {
-      const exitCode = await commandImportKinmu(program.opts(), { ...options });
-      process.exit(exitCode);
-    } catch (e) {
-      if (!(e instanceof Error)) {
-        logger.errors("NOTREACHED");
-        throw e;
-      }
-      if (e instanceof KousuError) {
-        // assert(e.constructor.name === "KousuError")
-        process.exit(1);
-      }
-      logger.warn(`e.constructor.name: ${e.constructor.name}`);
-      logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
-      throw e;
-    }
-    // NOTREACHED
-  });
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function errorInCsv(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました"
-  );
-}
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function errorInJson(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました"
-  );
-}
 
 export interface ArgsPut {
   file: string;
