@@ -6,8 +6,8 @@ import * as fs from "node:fs";
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./command-get";
+import type { Args, ArgsPut } from "./cli";
 import { KousuError } from "./common";
-import type { Args, ArgsPut } from "./index";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";

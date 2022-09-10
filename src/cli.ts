@@ -1,5 +1,3 @@
-#!/usr/bin/env node
-
 // SPDX-License-Identifier: Apache-2.0
 
 import * as path from "node:path";
@@ -21,6 +19,10 @@ import { logger } from "./utils";
 utils.waitDebuggerAttach();
 
 const initialize = new awaitNotify.Subject();
+
+// TODO: implement as queue
+const exit = new awaitNotify.Subject();
+let exitCode = -1;
 
 // -----------------------------------------------------------------------------
 // cli
@@ -95,8 +97,9 @@ program
   .action(async (options: ArgsImportKinmu) => {
     await initialize.wait(0);
     try {
-      const exitCode = await commandImportKinmu(program.opts(), { ...options });
-      process.exit(exitCode);
+      exitCode = await commandImportKinmu(program.opts(), { ...options });
+      exit.notify();
+      return;
     } catch (e) {
       if (!(e instanceof Error)) {
         logger.errors("NOTREACHED");
@@ -154,8 +157,9 @@ program
   .action(async (file: string, options: ArgsGet) => {
     await initialize.wait(0);
     try {
-      const exitCode = await commandGet(program.opts(), { ...options, file });
-      process.exit(exitCode);
+      exitCode = await commandGet(program.opts(), { ...options, file });
+      exit.notify();
+      return;
     } catch (e) {
       if (!(e instanceof Error)) {
         logger.errors("NOTREACHED");
@@ -187,8 +191,9 @@ program
   .action(async (file: string, options: ArgsPut) => {
     await initialize.wait(0);
     try {
-      const exitCode = await commandPut(program.opts(), { ...options, file });
-      process.exit(exitCode);
+      exitCode = await commandPut(program.opts(), { ...options, file });
+      exit.notify();
+      return;
     } catch (e) {
       if (!(e instanceof Error)) {
         logger.errors("NOTREACHED");
@@ -205,31 +210,32 @@ program
     // NOTREACHED
   });
 
-program.parse(process.argv);
+export async function run(): Promise<never> {
+  program.parse(process.argv);
 
-if (program.opts().quiet === true && program.opts().verbose > 0) {
-  process.stderr.write("error: -q and -v are mutually exclusive\n");
-  process.exit(1);
+  if (program.opts().quiet === true && program.opts().verbose > 0) {
+    process.stderr.write("error: -q and -v are mutually exclusive\n");
+    process.exit(1);
+  }
+
+  if (program.opts().quiet === true) {
+    logger.level = "error";
+  } else if (program.opts().verbose === 0) {
+    logger.level = "warn";
+  } else if (program.opts().verbose === 1) {
+    logger.level = "info";
+  } else if (program.opts().verbose >= 1) {
+    logger.level = "debug";
+  }
+
+  logger.debug(`${path.basename(__filename)} version ${VERSION}`);
+
+  logger.debug(program.args);
+
+  common.setErrorLogCallback((s: string) => logger.error(s));
+  common.setErrorLogStackCallback((s: string) => logger.errors(s));
+
+  initialize.notify();
+  await exit.wait(0);
+  process.exit(exitCode);
 }
-
-if (program.opts().quiet === true) {
-  logger.level = "error";
-} else if (program.opts().verbose === 0) {
-  logger.level = "warn";
-} else if (program.opts().verbose === 1) {
-  logger.level = "info";
-} else if (program.opts().verbose >= 1) {
-  logger.level = "debug";
-}
-
-logger.debug(`${path.basename(__filename)} version ${VERSION}`);
-
-logger.debug(program.args);
-
-// -----------------------------------------------------------------------------
-// main
-
-common.setErrorLogCallback((s: string) => logger.error(s));
-common.setErrorLogStackCallback((s: string) => logger.errors(s));
-
-initialize.notify();

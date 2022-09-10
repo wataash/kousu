@@ -9,8 +9,8 @@ import * as fs from "node:fs";
 import * as xpath from "xpath";
 import * as xmldom from "@xmldom/xmldom";
 
+import type { Args, ArgsGet } from "./cli";
 import { KousuError } from "./common";
-import type { Args, ArgsGet } from "./index";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";
