@@ -19,7 +19,7 @@
   "repository": "github:wataash/kousu",
   "scripts": {
     "format": "prettier --write src/",
-    "posttest": "eslint src/; prettier --check src/",
+    "posttest": "eslint ./; prettier --check src/",
     "prepack": "rm -fr dist/ && tsc -b"
   },
   "dependencies": {
