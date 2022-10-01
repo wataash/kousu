@@ -77,8 +77,8 @@ program
   .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
   .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
   .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(parseMonth(utils.prevMonth(), null), utils.prevMonth()).argParser(parseMonth))
-  .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false))
-  .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(increaseVerbosity))
+  .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
+  .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(increaseVerbosity).conflicts("quiet"))
   .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp().conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
   .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp().conflicts(["zPuppeteerCookieSave"]))
   .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp().conflicts(["zPuppeteerCookieLoad"]))
@@ -212,11 +212,6 @@ program
 
 export async function run(): Promise<never> {
   program.parse(process.argv);
-
-  if (program.opts().quiet === true && program.opts().verbose > 0) {
-    process.stderr.write("error: -q and -v are mutually exclusive\n");
-    process.exit(1);
-  }
 
   if (program.opts().quiet === true) {
     logger.level = "error";
