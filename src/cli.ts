@@ -27,7 +27,7 @@ let exitCode = -1;
 // -----------------------------------------------------------------------------
 // cli
 
-const VERSION = "2.0.3";
+export const VERSION = "2.0.3";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 function increaseVerbosity(value: string /* actually undefined */, previous: number): number {
@@ -79,11 +79,11 @@ program
   .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(parseMonth(utils.prevMonth(), null), utils.prevMonth()).argParser(parseMonth))
   .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false))
   .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(increaseVerbosity))
-  .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp(true).conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp(true).conflicts(["zPuppeteerCookieSave"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp(true).conflicts(["zPuppeteerCookieLoad"]))
-  .addOption(new commander.Option(" --no-z-puppeteer-launch-handle-sigint").hideHelp(true).conflicts(["zPuppeteerConnectUrl"]))
-  .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp(true).default(false).conflicts(["zPuppeteerConnectUrl"]))
+  .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp().conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
+  .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp().conflicts(["zPuppeteerCookieSave"]))
+  .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp().conflicts(["zPuppeteerCookieLoad"]))
+  .addOption(new commander.Option(" --no-z-puppeteer-launch-handle-sigint").hideHelp().conflicts(["zPuppeteerConnectUrl"]))
+  .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp().default(false).conflicts(["zPuppeteerConnectUrl"]))
   .alias(); // dummy
 
 /* eslint-disable @typescript-eslint/no-empty-interface */
@@ -150,8 +150,8 @@ export interface ArgsGet {
 program
   .command("get")
   .description("MA-EYESにログインして工数実績を取得する")
-  .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp(true).argParser(errorOutCsv))
-  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp(true).argParser(errorOutJson))
+  .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
+  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
   .argument("<file>", "JSONの出力パス")
   .allowExcessArguments(false)
   .action(async (file: string, options: ArgsGet) => {
@@ -184,8 +184,8 @@ export interface ArgsPut {
 program
   .command("put")
   .description("MA-EYESにログインして工数実績を入力する")
-  .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp(true).argParser(errorInCsv))
-  .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp(true).argParser(errorInJson))
+  .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
+  .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
   .argument("<file>", "入力するJSONのパス")
   .allowExcessArguments(false)
   .action(async (file: string, options: ArgsPut) => {
