@@ -27,7 +27,7 @@ let exitCode = -1;
 // -----------------------------------------------------------------------------
 // cli
 
-export const VERSION = "2.0.3";
+export const VERSION = "2.0.4";
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 function increaseVerbosity(value: string /* actually undefined */, previous: number): number {
