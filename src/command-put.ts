@@ -7,7 +7,7 @@ import * as fs from "node:fs";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { Jisseki, Kinmu, Kousu, Kousu010, ProjectName } from "./command-get";
 import type { Args, ArgsPut } from "./cli";
-import { KousuError } from "./common";
+import { AppError } from "./common";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";
@@ -18,7 +18,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
   const kousu: Kousu | Kousu010 = (() => {
     const j = JSON.parse(fs.readFileSync(argsPut.file, "utf8")) as Kousu | Kousu010;
     const e = (msg: string) => {
-      throw new KousuError(`invalid JSON: ${msg}`);
+      throw new AppError(`invalid JSON: ${msg}`);
     };
     // eslint-disable-next-line no-warning-comments
     // TODO: more strict check with quicktype
@@ -122,7 +122,7 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
           }
           if (typeof tmp === "string") {
             if (compat !== "0.1.0") {
-              throw new KousuError(`BUG: jisseki.jisseki[project]: ${tmp}`);
+              throw new AppError(`BUG: jisseki.jisseki[project]: ${tmp}`);
             }
             return tmp;
           }

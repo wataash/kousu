@@ -24,7 +24,7 @@ export function setErrorLogStackCallback(cb: (s: string) => void): void {
 // -----------------------------------------------------------------------------
 // errors
 
-export class KousuError extends Error {
+export class AppError extends Error {
   constructor(message: string, withStack = false) {
     // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
     super(message);

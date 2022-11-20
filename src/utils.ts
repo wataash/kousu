@@ -9,7 +9,7 @@ import * as inspector from "node:inspector";
 import type * as log4js from "log4js";
 import * as puppeteer from "puppeteer";
 
-import { KousuError } from "./common";
+import { AppError } from "./common";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ElementHandle } from "puppeteer";
 
@@ -119,7 +119,7 @@ export async function puppeteerClose(browser: puppeteer.Browser, disconnect: boo
 export async function puppeteerCookieLoad(page: puppeteer.Page, cookiePath: string): Promise<void> {
   if (!fs.existsSync(cookiePath)) {
     // TODO: catch ENOENT instead
-    throw new KousuError(`cookie file (${cookiePath}) not found`);
+    throw new AppError(`cookie file (${cookiePath}) not found`);
   }
   const txt = fs.readFileSync(cookiePath, "utf8");
   const cookies: puppeteer.Protocol.Network.CookieParam[] = JSON.parse(txt);
@@ -157,9 +157,9 @@ export async function $xn(
     return elementHandles;
   }
   if (errMsg === "") {
-    throw new KousuError(`BUG: '$x(\`${expression}\`').length is not ${n}, actually ${elementHandles.length}`);
+    throw new AppError(`BUG: '$x(\`${expression}\`').length is not ${n}, actually ${elementHandles.length}`);
   } else {
-    throw new KousuError(`BUG: ${errMsg}; $x(\`${expression}'\`.length is not ${n}, actually ${elementHandles.length}`);
+    throw new AppError(`BUG: ${errMsg}; $x(\`${expression}'\`.length is not ${n}, actually ${elementHandles.length}`);
   }
 }
 

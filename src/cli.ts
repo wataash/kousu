@@ -12,7 +12,7 @@ import { run as commandGet } from "./command-get";
 import { run as commandImportKinmu } from "./command-import-kinmu";
 import { run as commandPut } from "./command-put";
 import * as common from "./common";
-import { KousuError } from "./common";
+import { AppError } from "./common";
 import * as utils from "./utils";
 import { logger } from "./utils";
 
@@ -105,8 +105,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e instanceof KousuError) {
-        // assert(e.constructor.name === "KousuError")
+      if (e instanceof AppError) {
+        // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);
@@ -165,8 +165,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e instanceof KousuError) {
-        // assert(e.constructor.name === "KousuError")
+      if (e instanceof AppError) {
+        // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);
@@ -199,8 +199,8 @@ program
         logger.errors("NOTREACHED");
         throw e;
       }
-      if (e instanceof KousuError) {
-        // assert(e.constructor.name === "KousuError")
+      if (e instanceof AppError) {
+        // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.warn(`e.constructor.name: ${e.constructor.name}`);

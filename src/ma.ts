@@ -6,7 +6,7 @@
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type * as puppeteer from "puppeteer";
 
-import { KousuError } from "./common";
+import { AppError } from "./common";
 import * as utils from "./utils";
 import { logger } from "./utils";
 
@@ -126,10 +126,10 @@ export async function selectYearMonth(page: puppeteer.Page, year: number, month:
     logger.debug(`elem.select(${year_})`);
     const elems2 = await elem.select(year_);
     if (elems2.length !== 1) {
-      throw new KousuError(`failed to select year (elems2.length: ${elems2.length})`);
+      throw new AppError(`failed to select year (elems2.length: ${elems2.length})`);
     }
     if (elems2[0] !== year_) {
-      throw new KousuError(`failed to select year (elems2[0]: ${elems2[0]})`);
+      throw new AppError(`failed to select year (elems2[0]: ${elems2[0]})`);
     }
     await waitLoading(page);
   }
@@ -142,10 +142,10 @@ export async function selectYearMonth(page: puppeteer.Page, year: number, month:
     logger.debug(`elem.select(${month2})`);
     const elems2 = await elem.select(month2);
     if (elems2.length !== 1) {
-      throw new KousuError(`failed to select month2 (elems2.length: ${elems2.length})`);
+      throw new AppError(`failed to select month2 (elems2.length: ${elems2.length})`);
     }
     if (elems2[0] !== month2) {
-      throw new KousuError(`failed to select month2 (elems2[0]: ${elems2[0]})`);
+      throw new AppError(`failed to select month2 (elems2[0]: ${elems2[0]})`);
     }
     await waitLoading(page);
   }

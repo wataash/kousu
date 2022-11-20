@@ -10,7 +10,7 @@ import * as xpath from "xpath";
 import * as xmldom from "@xmldom/xmldom";
 
 import type { Args, ArgsGet } from "./cli";
-import { KousuError } from "./common";
+import { AppError } from "./common";
 import * as ma from "./ma";
 import * as utils from "./utils";
 import { logger } from "./utils";
@@ -207,7 +207,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 
   const trs = x(`//tr`, doc);
   if (trs.length !== 6) {
-    throw new KousuError(
+    throw new AppError(
       `BUG: 勤務時間表の形式が不正です (expected 6 trs (date 出社 退社 翌日 休憩 休み), found ${trs.length} trs)`,
       true
     );
@@ -223,14 +223,14 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
 
   const checkTds = (row: number, tds: xpath.SelectedValue[], text0: string) => {
     if (tds.length !== 8) {
-      throw new KousuError(
+      throw new AppError(
         `BUG: 勤務時間表の形式が不正です (expected 8 tds (header+月火水木金土日), found ${tds.length} tds)`,
         true
       );
     }
     // .data
     if ((tds[0] as Element).textContent !== text0) {
-      throw new KousuError(
+      throw new AppError(
         `BUG: 勤務時間表の${row}行1列が "${text0}" でありません (found: ${(tds[0] as Element).textContent})`,
         true
       );
@@ -247,11 +247,11 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
     for (let i = 1; i < tds.length; i++) {
       const txt = (tds[i] as Element).textContent;
       if (txt === null) {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`, true);
       }
       const match = txt.match(/(\d\d?)\/(\d\d?)\((月|火|水|木|金|土|日)\)/);
       if (match === null) {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です: ${txt}`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です: ${txt}`, true);
       }
       datumDate.push(match[0]);
     }
@@ -273,7 +273,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumBegin.push(value);
     }
@@ -295,7 +295,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
       if (value === null) {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumEnd.push(value);
     }
@@ -317,7 +317,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       const input = inputN[0];
       const ariaChecked = input.getAttribute("aria-checked");
       if (ariaChecked !== "true" && ariaChecked !== "false") {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`, true);
       }
       datumYokujitsu.push(ariaChecked === "true");
     }
@@ -339,7 +339,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       const input = inputN[0];
       const value = input.getAttribute("value");
       if (value === null) {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
       }
       datumKyukei.push(value);
     }
@@ -361,7 +361,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       const label = labelN[0];
       const text = label.textContent;
       if (text !== "&nbsp;" && text !== "全休" && text !== "午前" && text !== "午後") {
-        throw new KousuError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`, true);
+        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`, true);
       }
       datumYasumi.push(text === "&nbsp;" ? "" : text);
     }
@@ -380,7 +380,7 @@ export function parseWeekKinmu(html: string): (Kinmu | null)[] {
       continue;
     }
     if (isNaN(parseFloat(datumKyukei[i] as string))) {
-      throw new KousuError(`BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`, true);
+      throw new AppError(`BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`, true);
     }
     ret.push({
       date: datumDate[i],
@@ -419,16 +419,16 @@ export function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string
   const assertText = (expression: string, node: any, data: string) => {
     const node2 = x1(expression, node);
     if (node2 === undefined) {
-      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`) === undefined`);
+      throw new AppError(`${errMsg}: node.$x(\`${expression}\`) === undefined`);
     }
     // ReferenceError: Text is not defined
     // if (!(node2 instanceof Text)) {
     if (node2.constructor.name !== "Text") {
-      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
+      throw new AppError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
     }
     const node3 = node2 as Text;
     if (node3.data !== data) {
-      throw new KousuError(`${errMsg}: node.$x(\`${expression}\`).data: expected: ${data}, actual: ${node3.data}`);
+      throw new AppError(`${errMsg}: node.$x(\`${expression}\`).data: expected: ${data}, actual: ${node3.data}`);
     }
     logger.debug(`$x(\`${expression}\`) === "${data}", ok`);
   };
@@ -503,7 +503,7 @@ export function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string
       return -1;
     }
     if (isNaN(parseFloat(elem.textContent as string))) {
-      throw new KousuError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
+      throw new AppError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
     }
     return parseFloat(elem.textContent as string);
   });
@@ -512,7 +512,7 @@ export function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string
       return null;
     }
     if (isNaN(parseFloat(elem.textContent as string))) {
-      throw new KousuError(`${errMsg}: 不明時間: ${elem.textContent})`, true);
+      throw new AppError(`${errMsg}: 不明時間: ${elem.textContent})`, true);
     }
     return parseFloat(elem.textContent as string);
   });
@@ -553,7 +553,7 @@ export function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string
   // 月 ... 日
   const parseJisseki = (s: string, trtd: string): number => {
     if (isNaN(parseFloat(s as string))) {
-      throw new KousuError(`${errMsg}: 作業時間: ${trtd}: ${s})`, true);
+      throw new AppError(`${errMsg}: 作業時間: ${trtd}: ${s})`, true);
     }
     return parseFloat(s as string);
   };
