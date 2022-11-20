@@ -197,26 +197,3 @@ export async function sleepForever(): Promise<never> {
     await sleep(1000);
   }
 }
-
-export function waitDebuggerAttach() {
-  // if (!process.execArgv.includes("--inspect")) {
-  if (inspector.url() === undefined) {
-    // not in debugger
-    return;
-  }
-
-  const start = Date.now();
-  for (;;) {
-    // TODO: detect connected
-    // child_process.execSync(`lsof -nP -p ${process.pid}`, {stdio: "inherit", encoding: "utf8"});
-
-    const delta = Date.now() - start;
-    // delta: breaks at around 0-1000; so >2000 is enough
-    // webstorm: break this:
-    // - [ ] Suspend execution
-    // - [x] Evaluate and log: delta = 9999
-    if (delta > 2000) {
-      break;
-    }
-  }
-}

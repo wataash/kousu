@@ -16,8 +16,6 @@ import { AppError } from "./common";
 import * as utils from "./utils";
 import { logger } from "./utils";
 
-utils.waitDebuggerAttach();
-
 const initialize = new awaitNotify.Subject();
 
 // TODO: implement as queue
