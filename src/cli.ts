@@ -107,8 +107,7 @@ program
         // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
-      logger.warn(`e.constructor.name: ${e.constructor.name}`);
-      logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
+      logger.error(`unexpected error: ${e}`);
       throw e;
     }
     // NOTREACHED
@@ -167,8 +166,7 @@ program
         // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
-      logger.warn(`e.constructor.name: ${e.constructor.name}`);
-      logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
+      logger.error(`unexpected error: ${e}`);
       throw e;
     }
     // NOTREACHED
@@ -201,8 +199,7 @@ program
         // assert(e.constructor.name === "AppError")
         process.exit(1);
       }
-      logger.warn(`e.constructor.name: ${e.constructor.name}`);
-      logger.error(`unexpected error: ${e.message}\nstack trace:\n${e.stack}`);
+      logger.error(`unexpected error: ${e}`);
       throw e;
     }
     // NOTREACHED
