@@ -37,12 +37,12 @@ export async function run(args: Args, argsPut: ArgsPut): Promise<number> {
       return (kousu as Kousu010).jissekis.reduce((acc, jisseki) => {
         acc[jisseki.date] = jisseki;
         return acc;
-      }, {} as { [date: string]: typeof kousu.jissekis[number] });
+      }, {} as { [date: string]: (typeof kousu.jissekis)[number] });
     }
     return (kousu as Kousu).jissekis.reduce((acc, jisseki) => {
       acc[jisseki.date] = jisseki;
       return acc;
-    }, {} as { [date: string]: typeof kousu.jissekis[number] });
+    }, {} as { [date: string]: (typeof kousu.jissekis)[number] });
   })();
   const [browser, page] = await utils.puppeteerBrowserPage(
     args.ignoreHttps,
