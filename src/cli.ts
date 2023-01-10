@@ -70,11 +70,11 @@ program
   .name("kousu")
   .description("ビーブレイクシステムズMA-EYES（webアプリ版）の作業実績（工数）入力を行う")
   .version(VERSION)
-  .addOption(new commander.Option("--ignore-https", "HTTPSエラーを無視する").default(false))
-  .addOption(new commander.Option("--ma-pass <pass>", "MA-EYESのパスワード").env("KOUSU_MA_PASS").makeOptionMandatory(true))
-  .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
-  .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
-  .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(parseMonth(utils.prevMonth(), null), utils.prevMonth()).argParser(parseMonth))
+  .addOption(new commander.Option("    --ignore-https", "HTTPSエラーを無視する").default(false))
+  .addOption(new commander.Option("    --ma-pass <pass>", "MA-EYESのパスワード").env("KOUSU_MA_PASS").makeOptionMandatory(true))
+  .addOption(new commander.Option("    --ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
+  .addOption(new commander.Option("    --ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
+  .addOption(new commander.Option("    --month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(parseMonth(utils.prevMonth(), null), utils.prevMonth()).argParser(parseMonth))
   .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
   .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(increaseVerbosity).conflicts("quiet"))
   .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp().conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
@@ -147,10 +147,10 @@ export interface ArgsGet {
 program
   .command("get")
   .description("MA-EYESにログインして工数実績を取得する")
-  .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
-  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
-  .argument("<file>", "JSONの出力パス")
   .allowExcessArguments(false)
+  .addOption(new commander.Option("    --out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
+  .addOption(new commander.Option("    --out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
+  .argument("<file>", "JSONの出力パス")
   .action(async (file: string, options: ArgsGet) => {
     await initialize.wait(0);
     try {
@@ -180,10 +180,10 @@ export interface ArgsPut {
 program
   .command("put")
   .description("MA-EYESにログインして工数実績を入力する")
-  .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
-  .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
-  .argument("<file>", "入力するJSONのパス")
   .allowExcessArguments(false)
+  .addOption(new commander.Option("    --in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
+  .addOption(new commander.Option("    --in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
+  .argument("<file>", "入力するJSONのパス")
   .action(async (file: string, options: ArgsPut) => {
     await initialize.wait(0);
     try {
