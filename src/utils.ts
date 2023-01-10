@@ -176,7 +176,7 @@ export async function $x1(
 
 // https://github.com/jonschlinkert/isobject/blob/master/index.js
 // eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-export function isObject(value: any): value is object {
+export function isObject(value: unknown): value is object {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }
 
