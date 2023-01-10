@@ -110,7 +110,7 @@ program
       logger.error(`unexpected error: ${e}`);
       throw e;
     }
-    // NOTREACHED
+    throw new AppError("NOTREACHED", true);
   });
 
 function errorOutCsv(value: string /* actually undefined */, previous: undefined): never {
@@ -169,7 +169,7 @@ program
       logger.error(`unexpected error: ${e}`);
       throw e;
     }
-    // NOTREACHED
+    throw new AppError("NOTREACHED", true);
   });
 
 export interface ArgsPut {
@@ -202,7 +202,7 @@ program
       logger.error(`unexpected error: ${e}`);
       throw e;
     }
-    // NOTREACHED
+    throw new AppError("NOTREACHED", true);
   });
 
 export async function run(): Promise<never> {
