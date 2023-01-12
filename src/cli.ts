@@ -51,6 +51,7 @@ function parseMonth(value: string, previous: unknown): [number, number] {
 }
 
 export interface Args {
+  // program.opts()
   ignoreHttps: boolean;
   maPass: string;
   maUrl: string;
@@ -63,6 +64,7 @@ export interface Args {
   zPuppeteerCookieSave?: string;
   zPuppeteerLaunchHandleSigint: boolean;
   zPuppeteerLaunchHeadless: boolean;
+  // program.args
 }
 
 // prettier-ignore
@@ -85,7 +87,10 @@ program
   .alias(); // dummy
 
 /* eslint-disable @typescript-eslint/no-empty-interface */
-export interface ArgsImportKinmu {}
+export interface ArgsImportKinmu {
+  // program.opts()
+  // program.args
+}
 
 // prettier-ignore
 program
@@ -140,6 +145,8 @@ function errorInJson(value: string /* actually undefined */, previous: undefined
 }
 
 export interface ArgsGet {
+  // program.opts()
+  // program.args
   file: string;
 }
 
@@ -173,6 +180,8 @@ program
   });
 
 export interface ArgsPut {
+  // program.opts()
+  // program.args
   file: string;
 }
 
@@ -220,7 +229,7 @@ export async function run(): Promise<never> {
 
   logger.debug(`${path.basename(__filename)} version ${VERSION}`);
 
-  logger.debug(program.args);
+  logger.debug("args: %O", process.argv);
 
   common.setErrorLogCallback((s: string) => logger.error(s));
   common.setErrorLogStackCallback((s: string) => logger.errors(s));
