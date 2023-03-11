@@ -2,10 +2,10 @@
 // SPDX-License-Identifier: Apache-2.0
 
 // API
-export { Jisseki, Kinmu, Kousu, ProjectName } from "./command-get";
+export { Jisseki, Kinmu, Kousu, ProjectName, VERSION } from "./cli";
 
-import { run } from "./cli";
+import { cliMain } from "./cli";
 
 if (require.main === module) {
-  run();
+  cliMain();
 }
