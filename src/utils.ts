@@ -13,17 +13,9 @@ import { AppError } from "./common";
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 import type { ElementHandle } from "puppeteer";
 
-// @template:logger
-process.env.LOG_PRETTY = "1";
-// eslint-disable-next-line @typescript-eslint/no-var-requires
-const loggerLib = require("./logger");
-interface LoggerStacktrace {
-  errors(message: any, ...args: any[]): void;
-  warns(message: any, ...args: any[]): void;
-  infos(message: any, ...args: any[]): void;
-  debugs(message: any, ...args: any[]): void;
-}
-export const logger: log4js.Logger & LoggerStacktrace = loggerLib.logger;
+import { Logger } from "./logger";
+
+export const logger = new Logger();
 
 // -------------------------------------------------------------------------------------------------
 // date

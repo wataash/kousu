@@ -29,6 +29,7 @@
     "date-format": "^4.0.14",
     "log4js": "^6.9.1",
     "puppeteer": "^21.3.8",
+    "stacktrace-js": "^2.0.2",
     "xpath": "0.0.33"
   },
   "devDependencies": {

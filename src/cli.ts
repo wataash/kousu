@@ -218,13 +218,13 @@ export async function run(): Promise<never> {
   program.parse(process.argv);
 
   if (program.opts().quiet === true) {
-    logger.level = "error";
+    logger.level = Logger.Level.Error;
   } else if (program.opts().verbose === 0) {
-    logger.level = "warn";
+    logger.level = Logger.Level.Warn;
   } else if (program.opts().verbose === 1) {
-    logger.level = "info";
+    logger.level = Logger.Level.Info;
   } else if (program.opts().verbose >= 1) {
-    logger.level = "debug";
+    logger.level = Logger.Level.Debug;
   }
 
   logger.debug(`${path.basename(__filename)} version ${VERSION}`);
