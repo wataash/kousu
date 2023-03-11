@@ -109,7 +109,7 @@ program
         throw e;
       }
       if (e instanceof AppError) {
-        // assert(e.constructor.name === "AppError")
+        // assert.ok(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.error(`unexpected error: ${e}`);
@@ -170,7 +170,7 @@ program
         throw e;
       }
       if (e instanceof AppError) {
-        // assert(e.constructor.name === "AppError")
+        // assert.ok(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.error(`unexpected error: ${e}`);
@@ -205,7 +205,7 @@ program
         throw e;
       }
       if (e instanceof AppError) {
-        // assert(e.constructor.name === "AppError")
+        // assert.ok(e.constructor.name === "AppError")
         process.exit(1);
       }
       logger.error(`unexpected error: ${e}`);

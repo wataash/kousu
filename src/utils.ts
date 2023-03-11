@@ -33,11 +33,10 @@ export const logger: log4js.Logger & LoggerStacktrace = loggerLib.logger;
  */
 export function prevMonthFirst(): string {
   const now = new Date();
-  // ok even for January
+  // ok even in January
   // new Date(2006, 0, 2)  -> 2006-01-02
   // new Date(2006, -1, 2) -> 2005-12-02
-  const d = new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, -now.getTimezoneOffset());
-  return d.toISOString().slice(0, 10);
+  return new Date(now.getFullYear(), now.getMonth() - 1, 1, 0, -now.getTimezoneOffset()).toISOString().slice(0, 10);
 }
 
 /**
@@ -45,8 +44,7 @@ export function prevMonthFirst(): string {
  */
 export function prevMonthLast(): string {
   const now = new Date();
-  const d = new Date(now.getFullYear(), now.getMonth(), 0, 0, -now.getTimezoneOffset());
-  return d.toISOString().slice(0, 10);
+  return new Date(now.getFullYear(), now.getMonth(), 0, 0, -now.getTimezoneOffset()).toISOString().slice(0, 10);
 }
 
 /**
@@ -175,25 +173,19 @@ export async function $x1(
 // misc
 
 // https://github.com/jonschlinkert/isobject/blob/master/index.js
-// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 export function isObject(value: unknown): value is object {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }
 
-// @template:sleep
-export function sleep(milliSeconds: number): Promise<string> {
-  return new Promise((resolve) => {
-    setTimeout(() => {
-      resolve(`slept ${milliSeconds} ms`);
-    }, milliSeconds);
-  });
+export function sleep(milliSeconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliSeconds));
 }
 
 export async function sleepForever(): Promise<never> {
   // eslint-disable-next-line no-constant-condition
   while (true) {
-    // wakeup every 1 second for debugger to be able to break
+    // wakeup every 1 second so that debugger can break here
     // eslint-disable-next-line no-await-in-loop
-    await sleep(1000);
+    await new Promise((resolve) => setTimeout(resolve, 1000));
   }
 }
