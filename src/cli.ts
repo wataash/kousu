@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2021-2023 Wataru Ashihara <wataash@wataash.com>
+// SPDX-FileCopyrightText: Copyright (c) 2021-2023 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
 import * as fs from "node:fs";
