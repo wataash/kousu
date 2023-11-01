@@ -67,7 +67,7 @@ async function maEyesLogin(
   user: string,
   pass: string,
   pathCookieLoad: string | null,
-  pathCookieSave: string | null
+  pathCookieSave: string | null,
 ): Promise<void> {
   if (pathCookieLoad !== null) {
     await puppeteerCookieLoad(page, pathCookieLoad);
@@ -89,13 +89,13 @@ async function maEyesLogin(
   const inputUser = await $x1(
     page,
     `//input[@data-p-label="ユーザコード"]`,
-    "「ユーザーコード」のinput elementが見つかりません"
+    "「ユーザーコード」のinput elementが見つかりません",
   );
   await page.evaluate((el, user) => (el.value = user), inputUser as unknown as HTMLInputElement, user);
   const inputPass = await $x1(
     page,
     `//input[@data-p-label="パスワード"]`,
-    "「パスワード」のinput elementが見つかりません"
+    "「パスワード」のinput elementが見つかりません",
   );
   await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, pass);
   const button = await $x1(page, `//div[@class="login-actions"]/button`, "「ログイン」ボタンが見つかりません");
@@ -110,7 +110,7 @@ async function maEyesLogin(
 async function maEyesWaitLoadingGIF(
   page: puppeteer.Page,
   kind: "appear" | "disappear",
-  timeoutMs: number
+  timeoutMs: number,
 ): Promise<"success" | "error" | "timeout"> {
   // logger.debug(`wait loading GIF ${kind}...`);
   const waitMs = 100;
@@ -206,7 +206,7 @@ async function puppeteerBrowserPage(
   ignoreHTTPSErrors: boolean,
   puppeteerConnectUrl: string | null,
   puppeteerLaunchHandleSIGINT: boolean,
-  puppeteerLaunchHeadless: boolean
+  puppeteerLaunchHeadless: boolean,
 ): Promise<[puppeteer.Browser, puppeteer.Page]> {
   logger.debug("open chromium");
 
@@ -283,7 +283,7 @@ async function puppeteerCookieSave(page: puppeteer.Page, cookiePath: string): Pr
 
 async function $x(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
-  expression: string
+  expression: string,
 ): ReturnType<typeof page.$x> {
   // logger.debug(`$x(\`${expression}\`)`);
   return page.$x(expression);
@@ -293,7 +293,7 @@ async function $xn(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
   n: number,
-  errMsg: string
+  errMsg: string,
 ): ReturnType<typeof $x> {
   const elementHandles = await $x(page, expression);
   if (elementHandles.length === n) {
@@ -309,7 +309,7 @@ async function $xn(
 async function $x1(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
-  errMsg: string
+  errMsg: string,
 ): Promise<puppeteer.ElementHandle<Node>> {
   return (await $xn(page, expression, 1, errMsg))[0];
 }
@@ -508,13 +508,13 @@ function cliParseMonth(value: string, previous: unknown): [number, number] {
 
 function errorOutCsv(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
-    "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました"
+    "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました",
   );
 }
 
 function errorOutJson(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
-    "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました"
+    "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました",
   );
 }
 
@@ -779,7 +779,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
   if (trs.length !== 6) {
     throw new AppError(
       `BUG: 勤務時間表の形式が不正です (expected 6 trs (date 出社 退社 翌日 休憩 休み), found ${trs.length} trs)`,
-      true
+      true,
     );
   }
 
@@ -795,14 +795,14 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
     if (tds.length !== 8) {
       throw new AppError(
         `BUG: 勤務時間表の形式が不正です (expected 8 tds (header+月火水木金土日), found ${tds.length} tds)`,
-        true
+        true,
       );
     }
     // .data
     if ((tds[0] as Element).textContent !== text0) {
       throw new AppError(
         `BUG: 勤務時間表の${row}行1列が "${text0}" でありません (found: ${(tds[0] as Element).textContent})`,
-        true
+        true,
       );
     }
   };
@@ -1126,25 +1126,25 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     return parseFloat(s as string);
   };
   const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[7]`)
+    parseJisseki(elem.textContent as string, `tr/td[7]`),
   );
   const jissekis1 = (x(`tr/td[8]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[8]`)
+    parseJisseki(elem.textContent as string, `tr/td[8]`),
   );
   const jissekis2 = (x(`tr/td[9]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[9]`)
+    parseJisseki(elem.textContent as string, `tr/td[9]`),
   );
   const jissekis3 = (x(`tr/td[10]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[10]`)
+    parseJisseki(elem.textContent as string, `tr/td[10]`),
   );
   const jissekis4 = (x(`tr/td[11]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[11]`)
+    parseJisseki(elem.textContent as string, `tr/td[11]`),
   );
   const jissekis5 = (x(`tr/td[12]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[12]`)
+    parseJisseki(elem.textContent as string, `tr/td[12]`),
   );
   const jissekis6 = (x(`tr/td[13]`, tbody) as Element[]).map((elem) =>
-    parseJisseki(elem.textContent as string, `tr/td[13]`)
+    parseJisseki(elem.textContent as string, `tr/td[13]`),
   );
 
   logger.debug(`number of projects: ${projectIds.length}`);
@@ -1218,14 +1218,14 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
 /* eslint-disable @typescript-eslint/no-unused-vars */
 function errorInCsv(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
-    "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました"
+    "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました",
   );
 }
 
 /* eslint-disable @typescript-eslint/no-unused-vars */
 function errorInJson(value: string /* actually undefined */, previous: undefined): never {
   throw new commander.InvalidArgumentError(
-    "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました"
+    "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました",
   );
 }
 
