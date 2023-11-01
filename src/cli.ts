@@ -44,6 +44,7 @@ function datePrevMonthFirst(): string {
 /**
  * @returns {string} '2006-01-31'
  */
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
 function datePrevMonthLast(): string {
   const now = new Date();
   return new Date(now.getFullYear(), now.getMonth(), 0, 0, -now.getTimezoneOffset()).toISOString().slice(0, 10);
@@ -523,6 +524,8 @@ program
   .command("import-kinmu")
   .description("MA-EYESにログインして「勤務時間取込」「保存」を行う")
   .allowExcessArguments(false)
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (opts: {}) => {
     const optsGlobal = cliCommandInit();
 
@@ -636,6 +639,8 @@ program
   .addOption(new commander.Option("    --out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
   .addOption(new commander.Option("    --out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
   .argument("<file>", "JSONの出力パス")
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (file: string, opts: {}) => {
     const optsGlobal = cliCommandInit();
 
@@ -764,8 +769,12 @@ program
 function parseWeekKinmu(html: string): (Kinmu | null)[] {
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
+    // TODO:
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore TODO: error TS2322: Type 'SelectReturnType' is not assignable to type 'SelectedValue[]'.
     return xpath.select(expression, node);
   };
@@ -975,17 +984,25 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
 
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
+    // TODO:
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore TODO: error TS2322: Type 'SelectReturnType' is not assignable to type 'SelectedValue[]'.
     return xpath.select(expression, node);
   };
 
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x1 = (expression: string, node: any): ReturnType<typeof xpath.select1> => {
     logger.debug(`xpath.select1(\`${expression}\`)`);
     return xpath.select1(expression, node);
   };
 
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const assertText = (expression: string, node: any, data: string) => {
     const node2 = x1(expression, node);
     if (node2 === undefined) {
@@ -993,8 +1010,12 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     }
     // ReferenceError: Text is not defined
     // if (!(node2 instanceof Text)) {
+    // TODO:
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
     if (node2.constructor.name !== "Text") {
+      // TODO:
+      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
       // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
       throw new AppError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
     }
@@ -1241,6 +1262,8 @@ program
   .addOption(new commander.Option("    --in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
   .addOption(new commander.Option("    --in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
   .argument("<file>", "入力するJSONのパス")
+  // TODO:
+  // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (file: string, opts: {}) => {
     const optsGlobal = cliCommandInit();
 
