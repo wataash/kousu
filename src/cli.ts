@@ -766,6 +766,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
+    // @ts-ignore TODO: error TS2322: Type 'SelectReturnType' is not assignable to type 'SelectedValue[]'.
     return xpath.select(expression, node);
   };
 
@@ -976,6 +977,7 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
+    // @ts-ignore TODO: error TS2322: Type 'SelectReturnType' is not assignable to type 'SelectedValue[]'.
     return xpath.select(expression, node);
   };
 
@@ -991,7 +993,9 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     }
     // ReferenceError: Text is not defined
     // if (!(node2 instanceof Text)) {
+    // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
     if (node2.constructor.name !== "Text") {
+      // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
       throw new AppError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
     }
     const node3 = node2 as Text;
