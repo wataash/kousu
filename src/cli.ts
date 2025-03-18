@@ -1,6 +1,15 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2023 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
+import assert from "assert"; // in babel: replaced with: import assert from "power-assert";
+// not replaced:
+// import * as assert from "assert/strict";
+// import * as assert from "node:assert";
+// import * as assert from "node:assert/strict";
+// import assert from "assert/strict";
+// import assert from "node:assert";
+// import assert from "node:assert/strict";
+
 import * as fs from "node:fs";
 import * as path from "node:path";
 
@@ -90,16 +99,14 @@ async function maEyesLogin(
   const inputUser = await $x1(
     page,
     `//input[@data-p-label="ユーザコード"]`,
-    "「ユーザーコード」のinput elementが見つかりません",
   );
   await page.evaluate((el, user) => (el.value = user), inputUser as unknown as HTMLInputElement, user);
   const inputPass = await $x1(
     page,
     `//input[@data-p-label="パスワード"]`,
-    "「パスワード」のinput elementが見つかりません",
   );
   await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, pass);
-  const button = await $x1(page, `//div[@class="login-actions"]/button`, "「ログイン」ボタンが見つかりません");
+  const button = await $x1(page, `//div[@class="login-actions"]/button`);
   // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
   await Promise.all([page.waitForNavigation(), (button as unknown as HTMLButtonElement).click()]);
   if (pathCookieSave !== null) {
@@ -169,21 +176,15 @@ async function maEyesWaitLoading(page: puppeteer.Page, waitGIFMs = 30_000): Prom
 }
 
 async function maEyesSelectYearMonth(page: puppeteer.Page, year: number, month: number): Promise<void> {
-  const msg = "カレンダーの形式が不正です";
-
   // select year
   {
     const year_ = year.toString();
     // <select class="ui-datepicker-year" data-handler="selectYear" data-event="change" aria-label="select year">
-    const elem = await $x1(page, '//select[@class="ui-datepicker-year"]', msg);
+    const elem = await $x1(page, '//select[@class="ui-datepicker-year"]');
     logger.debug(`elem.select(${year_})`);
     const elems2 = await elem.select(year_);
-    if (elems2.length !== 1) {
-      throw new AppError(`failed to select year (elems2.length: ${elems2.length})`);
-    }
-    if (elems2[0] !== year_) {
-      throw new AppError(`failed to select year (elems2[0]: ${elems2[0]})`);
-    }
+    assert.ok(elems2.length === 1);
+    assert.ok(elems2[0] === year_);
     await maEyesWaitLoading(page);
   }
 
@@ -191,15 +192,11 @@ async function maEyesSelectYearMonth(page: puppeteer.Page, year: number, month: 
   {
     const month2 = (month - 1).toString();
     // <select class="ui-datepicker-month" data-handler="selectMonth" data-event="change" aria-label="select month">
-    const elem = await $x1(page, `//select[@class="ui-datepicker-month"]`, msg);
+    const elem = await $x1(page, `//select[@class="ui-datepicker-month"]`);
     logger.debug(`elem.select(${month2})`);
     const elems2 = await elem.select(month2);
-    if (elems2.length !== 1) {
-      throw new AppError(`failed to select month2 (elems2.length: ${elems2.length})`);
-    }
-    if (elems2[0] !== month2) {
-      throw new AppError(`failed to select month2 (elems2[0]: ${elems2[0]})`);
-    }
+    assert.ok(elems2.length === 1);
+    assert.ok(elems2[0] === month2);
     await maEyesWaitLoading(page);
   }
 }
@@ -300,25 +297,16 @@ async function $xn(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
   n: number,
-  errMsg: string,
 ): ReturnType<typeof $x> {
   const elementHandles = await $x(page, expression);
-  if (elementHandles.length === n) {
-    return elementHandles;
-  }
-  if (errMsg === "") {
-    throw new AppError(`BUG: '$x(\`${expression}\`').length is not ${n}, actually ${elementHandles.length}`);
-  } else {
-    throw new AppError(`BUG: ${errMsg}; $x(\`${expression}'\`.length is not ${n}, actually ${elementHandles.length}`);
-  }
+  assert.ok(elementHandles.length === n, expression);
 }
 
 async function $x1(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
-  errMsg: string,
 ): Promise<puppeteer.ElementHandle<Node>> {
-  return (await $xn(page, expression, 1, errMsg))[0];
+  return (await $xn(page, expression, 1))[0];
 }
 
 class Queue<T> {
@@ -715,24 +703,20 @@ program
       await Promise.all([maEyesWaitLoading(page), (elemDate as unknown as HTMLElement).click()]);
 
       const kinmus = await (async () => {
-        const elem = await $x1(page, `//table[@id="workResultView:j_idt69"]`, "勤務時間表の形式が不正です");
+        const elem = await $x1(page, `//table[@id="workResultView:j_idt69"]`);
         const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
         const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
         return kinmus;
       })();
 
       const [jissekis, projects_] = await (async () => {
-        const elem = await $x1(page, `//div[@id="workResultView:items"]`, "工数実績入力表の形式が不正です");
+        const elem = await $x1(page, `//div[@id="workResultView:items"]`);
         const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
         return parseWeekJisseki(html);
       })();
 
-      if (kinmus.length !== 7) {
-        logger.error(`勤務時間表の形式が不正です: kinmus.length (${kinmus.length}) !== 7`);
-      }
-      if (jissekis.length !== 7) {
-        logger.error(`工数実績入力表の形式が不正です: jissekis.length (${jissekis.length}) !== 7`);
-      }
+      assert.ok(kinmus.length === 7);
+      assert.ok(jissekis.length === 7);
       // TODO: projects_ が全ての週で一致するか確認
 
       for (const [i, kinmu] of kinmus.entries()) {
@@ -798,12 +782,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
   }).parseFromString(html);
 
   const trs = x(`//tr`, doc);
-  if (trs.length !== 6) {
-    throw new AppError(
-      `BUG: 勤務時間表の形式が不正です (expected 6 trs (date 出社 退社 翌日 休憩 休み), found ${trs.length} trs)`,
-      true,
-    );
-  }
+  assert.ok(trs.length === 6);
 
   const datumDate: string[] = []; //                7/27(月) 7/28(火) 7/29(水) 7/30(木) 7/31(金) 8/1(土) 8/2(日)
   const datumBegin: (string | null)[] = []; //      null     null     null     null     null     00:00   00:00
@@ -814,19 +793,9 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
   // -> [{"date":"8/1(土)", "begin":"09:00", "end":"17:30", "yokujitu":false, "kyukei": "0.0", "yasumi":""|"全休"|"午前"|"午後"}]
 
   const checkTds = (row: number, tds: xpath.SelectedValue[], text0: string) => {
-    if (tds.length !== 8) {
-      throw new AppError(
-        `BUG: 勤務時間表の形式が不正です (expected 8 tds (header+月火水木金土日), found ${tds.length} tds)`,
-        true,
-      );
-    }
+    assert.ok(tds.length === 8);
     // .data
-    if ((tds[0] as Element).textContent !== text0) {
-      throw new AppError(
-        `BUG: 勤務時間表の${row}行1列が "${text0}" でありません (found: ${(tds[0] as Element).textContent})`,
-        true,
-      );
-    }
+    assert.ok((tds[0] as Element).textContent === text0);
   };
 
   // trs[0]: datumDate
@@ -838,13 +807,9 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
     checkTds(row, tds, "");
     for (let i = 1; i < tds.length; i++) {
       const txt = (tds[i] as Element).textContent;
-      if (txt === null) {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (textContent===null)`, true);
-      }
+      assert.ok(txt !== null)
       const match = txt.match(/(\d\d?)\/(\d\d?)\((月|火|水|木|金|土|日)\)/);
-      if (match === null) {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です: ${txt}`, true);
-      }
+      assert.ok(match !== null)
       datumDate.push(match[0]);
     }
   }
@@ -864,9 +829,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
-      if (value === null) {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
-      }
+      assert.ok(value !== null);
       datumBegin.push(value);
     }
   }
@@ -886,9 +849,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const input = inputN[0];
       const value = input.getAttribute("value"); // "00:00"
-      if (value === null) {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
-      }
+      assert.ok(value !== null);
       datumEnd.push(value);
     }
   }
@@ -908,9 +869,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const input = inputN[0];
       const ariaChecked = input.getAttribute("aria-checked");
-      if (ariaChecked !== "true" && ariaChecked !== "false") {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (aria-checked=${ariaChecked})`, true);
-      }
+      assert.ok(ariaChecked === "true" || ariaChecked === "false");
       datumYokujitsu.push(ariaChecked === "true");
     }
   }
@@ -930,9 +889,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const input = inputN[0];
       const value = input.getAttribute("value");
-      if (value === null) {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (value=null)`, true);
-      }
+      assert.ok(value !== null);
       datumKyukei.push(value);
     }
   }
@@ -952,9 +909,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       }
       const label = labelN[0];
       const text = label.textContent;
-      if (text !== "&nbsp;" && text !== "全休" && text !== "午前" && text !== "午後") {
-        throw new AppError(`BUG: 勤務時間表の${row}行${i}列(${kind})が不正です (selected option: ${text})`, true);
-      }
+      assert.ok(text === "&nbsp;" || text === "全休" || text === "午前" || text === "午後");
       datumYasumi.push(text === "&nbsp;" ? "" : text);
     }
   }
@@ -971,9 +926,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
       ret.push(null);
       continue;
     }
-    if (isNaN(parseFloat(datumKyukei[i] as string))) {
-      throw new AppError(`BUG: 勤務時間表の形式が不正です (休憩: ${datumKyukei[i]})`, true);
-    }
+    assert.ok(!isNaN(parseFloat(datumKyukei[i] as string)));
     ret.push({
       date: datumDate[i],
       begin: datumBegin[i] as string,
@@ -991,8 +944,6 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
 function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: ProjectName }] {
   const jissekis: Jisseki[] = [];
   const projects: { [projectId: string]: ProjectName } = {};
-
-  const errMsg = "工数実績入力表の形式が不正です";
 
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
@@ -1016,25 +967,8 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
   // TODO:
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const assertText = (expression: string, node: any, data: string) => {
-    const node2 = x1(expression, node);
-    if (node2 === undefined) {
-      throw new AppError(`${errMsg}: node.$x(\`${expression}\`) === undefined`);
-    }
-    // ReferenceError: Text is not defined
-    // if (!(node2 instanceof Text)) {
-    // TODO:
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
-    if (node2.constructor.name !== "Text") {
-      // TODO:
-      // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-      // @ts-ignore TODO: error TS18047: 'node2' is possibly 'null'.
-      throw new AppError(`${errMsg}: node.$x(\`${expression}\`): expected: Text, acutual: ${node2.constructor.name}`);
-    }
-    const node3 = node2 as Text;
-    if (node3.data !== data) {
-      throw new AppError(`${errMsg}: node.$x(\`${expression}\`).data: expected: ${data}, actual: ${node3.data}`);
-    }
+    const node2 = x1(expression, node) as Text;
+    assert.ok(node2 !== undefined && node2.data === data);
     logger.debug(`$x(\`${expression}\`) === "${data}", ok`);
   };
 
@@ -1108,18 +1042,14 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     if (elem.textContent === "" || elem.textContent === "作業時間") {
       return -1;
     }
-    if (isNaN(parseFloat(elem.textContent as string))) {
-      throw new AppError(`${errMsg}: 作業時間: ${elem.textContent})`, true);
-    }
+    assert.ok(!isNaN(parseFloat(elem.textContent as string)));
     return parseFloat(elem.textContent as string);
   });
   const timesFumei = (x(`tr[3]/th/span[2]`, thead) as Element[]).map((elem) => {
     if (elem.textContent === "" || elem.textContent === "不明時間") {
       return null;
     }
-    if (isNaN(parseFloat(elem.textContent as string))) {
-      throw new AppError(`${errMsg}: 不明時間: ${elem.textContent})`, true);
-    }
+    assert.ok(!isNaN(parseFloat(elem.textContent as string)));
     return parseFloat(elem.textContent as string);
   });
   timesSagyou.shift(); // -1 ("")
@@ -1147,9 +1077,7 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     ["timesFumei", timesFumei],
     ["dates", dates],
   ]) {
-    if (var_.length !== 7) {
-      logger.error(`${errMsg}: ${name}.length (${var_.length}) !== 7`);
-    }
+    assert.ok(var_.length === 7, `${name}`);
   }
 
   const projectIds = (x(`tr/td[4]/div/span`, tbody) as Element[]).map((elem) => elem.textContent as string);
@@ -1158,9 +1086,7 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
   // const projects_text: Text[] = x('tr/td[7]', tbody);
   // 月 ... 日
   const parseJisseki = (s: string, trtd: string): number => {
-    if (isNaN(parseFloat(s as string))) {
-      throw new AppError(`${errMsg}: 作業時間: ${trtd}: ${s})`, true);
-    }
+    assert.ok(!isNaN(parseFloat(s as string)));
     return parseFloat(s as string);
   };
   const jissekis0 = (x(`tr/td[7]`, tbody) as Element[]).map((elem) =>
@@ -1196,9 +1122,7 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     ["jissekis5", jissekis5],
     ["jissekis6", jissekis6],
   ]) {
-    if (var_.length !== projectIds.length) {
-      logger.error(`${errMsg}: ${name}.length (${var_.length}) !== projectIds.length (${projectIds.length})`);
-    }
+    assert.ok(var_.length === projectIds.length, `${name}`);
   }
 
   jissekis.push({
@@ -1363,7 +1287,6 @@ program
           page,
           `//table[@id="workResultView:j_idt69"]//tr[1]/td`,
           8,
-          "勤務時間表の形式が不正です"
         );
         return Promise.all(
           // @ts-expect-error TODO
@@ -1406,7 +1329,6 @@ program
           const elem = await $x1(
             page,
             `//tbody[@id="workResultView:items_data"]/tr[${iProj + 1}]/td[${iDate + 7}]`,
-            "工数実績入力表の形式が不正です"
           );
           // await elem.evaluate((el) => (el as unknown as HTMLElement).innerText = "9.9");
           const txt = await elem.evaluate((el) => (el as unknown as HTMLElement).innerText);
@@ -1425,7 +1347,6 @@ program
               (await $x1(
                 page,
                 `//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`,
-                "工数実績入力表の形式が不正です"
               )) as unknown as HTMLElement
             ).click(),
           ]);
