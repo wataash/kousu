@@ -80,7 +80,7 @@ async function maEyesLogin(
   pathCookieSave: string | null,
 ): Promise<void> {
   if (pathCookieLoad !== null) {
-    await puppeteerCookieLoad(page, pathCookieLoad);
+    await pptrCookieLoad(page, pathCookieLoad);
     logger.debug(`page.goto ${urlLogin}`);
     await Promise.all([page.waitForNavigation(), page.goto(urlLogin)]);
     return;
@@ -90,7 +90,7 @@ async function maEyesLogin(
   await Promise.all([page.waitForNavigation(), page.goto(urlLogin)]);
 
   // .../loginView.xhtml (login)
-  // .../workResult.xhtml (already logged in; when using --puppeteer-connect-url)
+  // .../workResult.xhtml (already logged in; when using --pptr-connect-url)
   if (page.url().endsWith("/workResult.xhtml")) {
     logger.debug("already logged in");
     return;
@@ -107,10 +107,10 @@ async function maEyesLogin(
   );
   await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, pass);
   const button = await $x1(page, `//div[@class="login-actions"]/button`);
-  // XXX: 画面拡大率が100%でないと（主に --puppeteer-connect-url の場合）座標がずれて別のボタンが押される
+  // XXX: 画面拡大率が100%でないと（主に --pptr-connect-url の場合）座標がずれて別のボタンが押される
   await Promise.all([page.waitForNavigation(), (button as unknown as HTMLButtonElement).click()]);
   if (pathCookieSave !== null) {
-    await puppeteerCookieSave(page, pathCookieSave);
+    await pptrCookieSave(page, pathCookieSave);
   }
 }
 
@@ -201,33 +201,33 @@ async function maEyesSelectYearMonth(page: puppeteer.Page, year: number, month: 
   }
 }
 
-async function puppeteerBrowserPage(
+async function pptrBrowserPage(
   ignoreHTTPSErrors: boolean,
-  puppeteerConnectUrl: string | null,
-  puppeteerLaunchHandleSIGINT: boolean,
-  puppeteerLaunchHeadless: boolean,
+  pptrConnectUrl: string | null,
+  pptrLaunchHandleSIGINT: boolean,
+  pptrLaunchHeadless: boolean,
 ): Promise<[puppeteer.Browser, puppeteer.Page]> {
   logger.debug("open chromium");
 
   const browser = await (async () => {
-    if (puppeteerConnectUrl !== null) {
+    if (pptrConnectUrl !== null) {
       return puppeteer.connect({
         // ConnectOptions
-        browserURL: puppeteerConnectUrl,
+        browserURL: pptrConnectUrl,
         // BrowserOptions
         // @ts-expect-error TODO
         ignoreHTTPSErrors,
         // これが無いと800x600になる
-        // https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#puppeteerconnectoptions
+        // https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#pptrconnectoptions
         defaultViewport: null,
         // slowMo: 50, // for page.type
       });
     }
     return puppeteer.launch({
       // LaunchOptions
-      handleSIGINT: puppeteerLaunchHandleSIGINT,
+      handleSIGINT: pptrLaunchHandleSIGINT,
       // ChromeArgOptions
-      headless: puppeteerLaunchHeadless,
+      headless: pptrLaunchHeadless,
       // https://peter.sh/experiments/chromium-command-line-switches/
       // opts: ["--window-position=20,20", "--window-size=1400,800"],
       // devtools: true,
@@ -250,7 +250,7 @@ async function puppeteerBrowserPage(
   return [browser, page];
 }
 
-async function puppeteerClose(browser: puppeteer.Browser, disconnect: boolean): Promise<void> {
+async function pptrClose(browser: puppeteer.Browser, disconnect: boolean): Promise<void> {
   if (disconnect) {
     browser.disconnect();
   } else {
@@ -260,7 +260,7 @@ async function puppeteerClose(browser: puppeteer.Browser, disconnect: boolean): 
 
 // @template:cookie
 // web_cookie.md
-async function puppeteerCookieLoad(page: puppeteer.Page, cookiePath: string): Promise<void> {
+async function pptrCookieLoad(page: puppeteer.Page, cookiePath: string): Promise<void> {
   if (!fs.existsSync(cookiePath)) {
     // TODO: catch ENOENT instead
     throw new AppError(`cookie file (${cookiePath}) not found`);
@@ -275,7 +275,7 @@ async function puppeteerCookieLoad(page: puppeteer.Page, cookiePath: string): Pr
   }
 }
 
-async function puppeteerCookieSave(page: puppeteer.Page, cookiePath: string): Promise<void> {
+async function pptrCookieSave(page: puppeteer.Page, cookiePath: string): Promise<void> {
   logger.info("page.cookies()");
   const cookiesObject = await page.cookies();
   const s = JSON.stringify(cookiesObject, null, 2) + "\n";
@@ -414,11 +414,11 @@ interface OptsGlobal {
   month: [number, number];
   quiet: boolean;
   verbose: number;
-  zPuppeteerConnectUrl?: string;
-  zPuppeteerCookieLoad?: string;
-  zPuppeteerCookieSave?: string;
-  zPuppeteerLaunchHandleSigint: boolean;
-  zPuppeteerLaunchHeadless: boolean;
+  zPptrConnectUrl?: string;
+  zPptrCookieLoad?: string;
+  zPptrCookieSave?: string;
+  zPptrLaunchHandleSigint: boolean;
+  zPptrLaunchHeadless: boolean;
 }
 
 // prettier-ignore
@@ -433,11 +433,11 @@ program
   .addOption(new commander.Option("    --month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(cliParseMonth(datePrevMonth(), null), datePrevMonth()).argParser(cliParseMonth))
   .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
   .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(cliIncreaseVerbosity).conflicts("quiet"))
-  .addOption(new commander.Option("    --z-puppeteer-connect-url <url>").hideHelp().conflicts(["zPuppeteerLaunchHandleSigint", "zPuppeteerLaunchHeadless"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-load <path>").hideHelp().conflicts(["zPuppeteerCookieSave"]))
-  .addOption(new commander.Option("    --z-puppeteer-cookie-save <path>").hideHelp().conflicts(["zPuppeteerCookieLoad"]))
-  .addOption(new commander.Option(" --no-z-puppeteer-launch-handle-sigint").hideHelp().conflicts(["zPuppeteerConnectUrl"]))
-  .addOption(new commander.Option("    --z-puppeteer-launch-headless").hideHelp().default(false).conflicts(["zPuppeteerConnectUrl"]))
+  .addOption(new commander.Option("    --z-pptr-connect-url <url>").hideHelp().conflicts(["zPptrLaunchHandleSigint", "zPptrLaunchHeadless"]))
+  .addOption(new commander.Option("    --z-pptr-cookie-load <path>").hideHelp().conflicts(["zPptrCookieSave"]))
+  .addOption(new commander.Option("    --z-pptr-cookie-save <path>").hideHelp().conflicts(["zPptrCookieLoad"]))
+  .addOption(new commander.Option(" --no-z-pptr-launch-handle-sigint").hideHelp().conflicts(["zPptrConnectUrl"]))
+  .addOption(new commander.Option("    --z-pptr-launch-headless").hideHelp().default(false).conflicts(["zPptrConnectUrl"]))
   .alias(); // dummy
 
 const cliCommandExitStatus = new Queue<number>();
@@ -523,11 +523,11 @@ program
   .action(async (opts: {}) => {
     const optsGlobal = cliCommandInit();
 
-    const [browser, page] = await puppeteerBrowserPage(
+    const [browser, page] = await pptrBrowserPage(
       optsGlobal.ignoreHttps,
-      optsGlobal.zPuppeteerConnectUrl || null,
-      optsGlobal.zPuppeteerLaunchHandleSigint,
-      optsGlobal.zPuppeteerLaunchHeadless
+      optsGlobal.zPptrConnectUrl || null,
+      optsGlobal.zPptrLaunchHandleSigint,
+      optsGlobal.zPptrLaunchHeadless
     );
 
     await maEyesLogin(
@@ -535,12 +535,12 @@ program
       optsGlobal.maUrl,
       optsGlobal.maUser,
       optsGlobal.maPass,
-      optsGlobal.zPuppeteerCookieLoad || null,
-      optsGlobal.zPuppeteerCookieSave || null
+      optsGlobal.zPptrCookieLoad || null,
+      optsGlobal.zPptrCookieSave || null
     );
-    if ("zPuppeteerCookieSave" in optsGlobal) {
+    if ("zPptrCookieSave" in optsGlobal) {
       logger.info("cookie-save done;");
-      await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
       logger.debug("bye");
       cliCommandExitStatus.push(0);
     }
@@ -620,7 +620,7 @@ program
       logger.debug("next");
     }
 
-    await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
   });
@@ -641,11 +641,11 @@ program
   .action(async (file: string, opts: {}) => {
     const optsGlobal = cliCommandInit();
 
-    const [browser, page] = await puppeteerBrowserPage(
+    const [browser, page] = await pptrBrowserPage(
       optsGlobal.ignoreHttps,
-      optsGlobal.zPuppeteerConnectUrl || null,
-      optsGlobal.zPuppeteerLaunchHandleSigint,
-      optsGlobal.zPuppeteerLaunchHeadless
+      optsGlobal.zPptrConnectUrl || null,
+      optsGlobal.zPptrLaunchHandleSigint,
+      optsGlobal.zPptrLaunchHeadless
     );
 
     await maEyesLogin(
@@ -653,12 +653,12 @@ program
       optsGlobal.maUrl,
       optsGlobal.maUser,
       optsGlobal.maPass,
-      optsGlobal.zPuppeteerCookieLoad || null,
-      optsGlobal.zPuppeteerCookieSave || null
+      optsGlobal.zPptrCookieLoad || null,
+      optsGlobal.zPptrCookieSave || null
     );
-    if ("zPuppeteerCookieSave" in optsGlobal) {
+    if ("zPptrCookieSave" in optsGlobal) {
       logger.info("cookie-save done;");
-      await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
       logger.debug("bye");
       cliCommandExitStatus.push(0);
     }
@@ -755,7 +755,7 @@ program
     `;
 
     fs.writeFileSync(file, json);
-    await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
   });
@@ -1235,11 +1235,11 @@ program
         return acc;
       }, {} as { [date: string]: typeof kousu.jissekis[number] });
     })();
-    const [browser, page] = await puppeteerBrowserPage(
+    const [browser, page] = await pptrBrowserPage(
       optsGlobal.ignoreHttps,
-      optsGlobal.zPuppeteerConnectUrl || null,
-      optsGlobal.zPuppeteerLaunchHandleSigint,
-      optsGlobal.zPuppeteerLaunchHeadless
+      optsGlobal.zPptrConnectUrl || null,
+      optsGlobal.zPptrLaunchHandleSigint,
+      optsGlobal.zPptrLaunchHeadless
     );
 
     await maEyesLogin(
@@ -1247,12 +1247,12 @@ program
       optsGlobal.maUrl,
       optsGlobal.maUser,
       optsGlobal.maPass,
-      optsGlobal.zPuppeteerCookieLoad || null,
-      optsGlobal.zPuppeteerCookieSave || null
+      optsGlobal.zPptrCookieLoad || null,
+      optsGlobal.zPptrCookieSave || null
     );
-    if ("zPuppeteerCookieSave" in optsGlobal) {
+    if ("zPptrCookieSave" in optsGlobal) {
       logger.info("cookie-save done;");
-      await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
       logger.debug("bye");
       cliCommandExitStatus.push(0);
     }
@@ -1364,7 +1364,7 @@ program
       "breakpoint".match(/breakpoint/);
     }
 
-    await puppeteerClose(browser, optsGlobal.zPuppeteerConnectUrl !== undefined);
+    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
   });
