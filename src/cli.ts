@@ -128,6 +128,7 @@ async function maEyesWaitLoadingGIF(
     //   <!--                                                                                                                                                                                         ^^^^^^^^^^^^^^^ -->
     //   <img id="workResultView:j_idt58" src="/maeyes/javax.faces.resource/loading.gif.xhtml?ln=image" alt="">
     // </div>
+    // @ts-expect-error TODO
     const blockuiContent = await page.$x(`//div[contains(@class, "ui-blockui-content")]`);
     if (blockuiContent.length !== 2) {
       logger.warn(`BUG: number of $x(\`//div[contains(@class, "ui-blockui-content")]\`): ${blockuiContent.length}`);
@@ -217,6 +218,7 @@ async function puppeteerBrowserPage(
         // ConnectOptions
         browserURL: puppeteerConnectUrl,
         // BrowserOptions
+        // @ts-expect-error TODO
         ignoreHTTPSErrors,
         // これが無いと800x600になる
         // https://github.com/puppeteer/puppeteer/blob/main/docs/api.md#puppeteerconnectoptions
@@ -233,6 +235,7 @@ async function puppeteerBrowserPage(
       // opts: ["--window-position=20,20", "--window-size=1400,800"],
       // devtools: true,
       // BrowserOptions
+      // @ts-expect-error TODO
       ignoreHTTPSErrors,
       defaultViewport: null,
       // slowMo: 50, // for page.type
@@ -270,6 +273,7 @@ async function puppeteerCookieLoad(page: puppeteer.Page, cookiePath: string): Pr
   for (const cookie of cookies) {
     logger.debug(`page.setCookie(): ${JSON.stringify(cookie)}`);
     // eslint-disable-next-line no-await-in-loop
+    // @ts-expect-error TODO
     await page.setCookie(cookie);
   }
 }
@@ -285,8 +289,10 @@ async function puppeteerCookieSave(page: puppeteer.Page, cookiePath: string): Pr
 async function $x(
   page: puppeteer.Page | puppeteer.ElementHandle<Element>,
   expression: string,
+  // @ts-expect-error TODO
 ): ReturnType<typeof page.$x> {
   // logger.debug(`$x(\`${expression}\`)`);
+  // @ts-expect-error TODO
   return page.$x(expression);
 }
 
@@ -570,13 +576,16 @@ program
     // C[28]24   [29]25   [30]26   [31]27   [32]28   [33]29   [34]30
     // C[35]31   [36]     [37]     [38]     [39]     [40]1    [41]
     // C: click & load & save
+    // @ts-expect-error TODO
     const elemsCalendarDate = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
     for (let i = 0; i < elemsCalendarDate.length; i++) {
       // [XXX-$x-again]: We can't iterate over elemsCalendarDate:
       //   for (const [i, elem] of elemsCalendarDate.entries()) {
       //   since DOM is updated within the loop (just try it if you don't get it).
+      // @ts-expect-error TODO
       const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
       const elemDate = elemsCalendarDate2[i];
+      // @ts-expect-error TODO
       const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
       if (txt === "\u00A0") {
         // nbsp
@@ -689,8 +698,10 @@ program
     for (let i = 0; i < elemsCalendarDate.length; i++) {
       // click monday
       // see [XXX-$x-again]
+      // @ts-expect-error TODO
       const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
       const elemDate = elemsCalendarDate2[i];
+      // @ts-expect-error TODO
       const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
       // nbsp
       if (txt === "\u00A0") {
@@ -783,6 +794,7 @@ function parseWeekKinmu(html: string): (Kinmu | null)[] {
     errorHandler: () => {
       /* nop; just to suppress error logs */
     },
+    // @ts-expect-error TODO
   }).parseFromString(html);
 
   const trs = x(`//tr`, doc);
@@ -1030,6 +1042,7 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     errorHandler: () => {
       /* nop; just to suppress error logs */
     },
+    // @ts-expect-error TODO
   }).parseFromString(html);
 
   // debug with watching HTML:
@@ -1326,8 +1339,10 @@ program
     for (let i = 0; i < elemsCalendarDate.length; i++) {
       // click monday
       // see [XXX-$x-again]
+      // @ts-expect-error TODO
       const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
       const elemDate = elemsCalendarDate2[i];
+      // @ts-expect-error TODO
       const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
       // nbsp; 前後の月
       if (txt === "\u00A0") {
@@ -1351,6 +1366,7 @@ program
           "勤務時間表の形式が不正です"
         );
         return Promise.all(
+          // @ts-expect-error TODO
           elems.slice(1).map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
         );
       })();
@@ -1365,6 +1381,7 @@ program
         // $x(`//tbody[@id="workResultView:items_data"]/tr/td[4]/text()`)
         const elemsProject = await $x(page, `//tbody[@id="workResultView:items_data"]/tr/td[4]`);
         const projects = await Promise.all(
+          // @ts-expect-error TODO
           elemsProject.map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
         );
         for (const [iProj, project] of projects.entries()) {
