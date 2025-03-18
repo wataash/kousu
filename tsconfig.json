@@ -12,6 +12,10 @@
     "exactOptionalPropertyTypes": true,
     "skipLibCheck": true,
     "declaration": true,
+
+    // https://www.typescriptlang.org/docs/handbook/babel-with-typescript.html
+    "emitDeclarationOnly": true,
+    "isolatedModules": true
   },
   "include": [
     "src/**/*"
