@@ -13,8 +13,8 @@ import assert from "assert"; // in babel: replaced with: import assert from "pow
 import * as fs from "node:fs";
 import * as path from "node:path";
 
-import * as commander from "commander";
-import { program } from "commander";
+import * as commander from "@commander-js/extra-typings";
+import { program } from "@commander-js/extra-typings";
 import * as puppeteer from "puppeteer";
 import { Browser, ElementHandle, Page } from "puppeteer";
 import * as xmldom from "@xmldom/xmldom";
