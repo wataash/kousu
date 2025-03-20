@@ -24,10 +24,7 @@
   },
   "dependencies": {
     "@xmldom/xmldom": "^0.8.10",
-    "await-notify": "^1.0.1",
     "commander": "^11.1.0",
-    "date-format": "^4.0.14",
-    "log4js": "^6.9.1",
     "puppeteer": "^21.4.1",
     "stacktrace-js": "^2.0.2",
     "xpath": "0.0.33"
