@@ -1,4 +1,4 @@
-// SPDX-FileCopyrightText: Copyright (c) 2022-2023 Wataru Ashihara <wataash0607@gmail.com>
+// SPDX-FileCopyrightText: Copyright (c) 2022-2025 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
 import assert from "assert"; // in babel: replaced with: import assert from "power-assert";
