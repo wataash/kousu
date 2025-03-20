@@ -16,6 +16,7 @@ import * as path from "node:path";
 import * as commander from "commander";
 import { program } from "commander";
 import * as puppeteer from "puppeteer";
+import { Browser, ElementHandle, Page } from "puppeteer";
 import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
 
@@ -72,7 +73,7 @@ function isObject(value: unknown): value is object {
 }
 
 async function maEyesLogin(
-  page: puppeteer.Page,
+  page: Page,
   urlLogin: string,
   user: string,
   pass: string,
@@ -115,11 +116,7 @@ async function maEyesLogin(
 }
 
 // return false if timeout
-async function maEyesWaitLoadingGIF(
-  page: puppeteer.Page,
-  kind: "appear" | "disappear",
-  timeoutMs: number,
-): Promise<"success" | "error" | "timeout"> {
+async function maEyesWaitLoadingGIF(page: Page, kind: "appear" | "disappear", timeoutMs: number): Promise<"success" | "error" | "timeout"> {
   // logger.debug(`wait loading GIF ${kind}...`);
   const waitMs = 100;
   for (let i = 0; i < timeoutMs / waitMs; i++) {
@@ -162,7 +159,7 @@ async function maEyesWaitLoadingGIF(
 // ページ遷移は page.waitForNavigation() で拾えないので、読み込みGIFが現れて消え
 // るのを検出することにする
 // XXX: 30s はてきとう
-async function maEyesWaitLoading(page: puppeteer.Page, waitGIFMs = 30_000): Promise<void> {
+async function maEyesWaitLoading(page: Page, waitGIFMs = 30_000): Promise<void> {
   const resultAppaer = await maEyesWaitLoadingGIF(page, "appear", waitGIFMs);
   if (resultAppaer === "timeout") {
     return;
@@ -175,7 +172,7 @@ async function maEyesWaitLoading(page: puppeteer.Page, waitGIFMs = 30_000): Prom
   await sleep(500); // XXX: 500ms はてきとう
 }
 
-async function maEyesSelectYearMonth(page: puppeteer.Page, year: number, month: number): Promise<void> {
+async function maEyesSelectYearMonth(page: Page, year: number, month: number): Promise<void> {
   // select year
   {
     const year_ = year.toString();
@@ -206,7 +203,7 @@ async function pptrBrowserPage(
   pptrConnectUrl: string | null,
   pptrLaunchHandleSIGINT: boolean,
   pptrLaunchHeadless: boolean,
-): Promise<[puppeteer.Browser, puppeteer.Page]> {
+): Promise<[Browser, Page]> {
   logger.debug("open chromium");
 
   const browser = await (async () => {
@@ -250,7 +247,7 @@ async function pptrBrowserPage(
   return [browser, page];
 }
 
-async function pptrClose(browser: puppeteer.Browser, disconnect: boolean): Promise<void> {
+async function pptrClose(browser: Browser, disconnect: boolean): Promise<void> {
   if (disconnect) {
     browser.disconnect();
   } else {
@@ -258,9 +255,7 @@ async function pptrClose(browser: puppeteer.Browser, disconnect: boolean): Promi
   }
 }
 
-// @template:cookie
-// web_cookie.md
-async function pptrCookieLoad(page: puppeteer.Page, cookiePath: string): Promise<void> {
+async function pptrCookieLoad(page: Page, cookiePath: string): Promise<void> {
   if (!fs.existsSync(cookiePath)) {
     // TODO: catch ENOENT instead
     throw new AppError(`cookie file (${cookiePath}) not found`);
@@ -275,7 +270,7 @@ async function pptrCookieLoad(page: puppeteer.Page, cookiePath: string): Promise
   }
 }
 
-async function pptrCookieSave(page: puppeteer.Page, cookiePath: string): Promise<void> {
+async function pptrCookieSave(page: Page, cookiePath: string): Promise<void> {
   logger.info("page.cookies()");
   const cookiesObject = await page.cookies();
   const s = JSON.stringify(cookiesObject, null, 2) + "\n";
@@ -284,7 +279,7 @@ async function pptrCookieSave(page: puppeteer.Page, cookiePath: string): Promise
 }
 
 async function $x(
-  page: puppeteer.Page | puppeteer.ElementHandle<Element>,
+  page: Page | ElementHandle<Element>,
   expression: string,
   // @ts-expect-error TODO
 ): ReturnType<typeof page.$x> {
@@ -294,7 +289,7 @@ async function $x(
 }
 
 async function $xn(
-  page: puppeteer.Page | puppeteer.ElementHandle<Element>,
+  page: Page | ElementHandle<Element>,
   expression: string,
   n: number,
 ): ReturnType<typeof $x> {
@@ -303,9 +298,9 @@ async function $xn(
 }
 
 async function $x1(
-  page: puppeteer.Page | puppeteer.ElementHandle<Element>,
+  page: Page | ElementHandle<Element>,
   expression: string,
-): Promise<puppeteer.ElementHandle<Node>> {
+): Promise<ElementHandle<Node>> {
   return (await $xn(page, expression, 1))[0];
 }
 
