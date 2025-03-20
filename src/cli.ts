@@ -10,6 +10,7 @@ import assert from "assert"; // in babel: replaced with: import assert from "pow
 // import assert from "node:assert";
 // import assert from "node:assert/strict";
 
+import * as child_process from "node:child_process";
 import * as fs from "node:fs";
 import * as url from "node:url";
 import * as path from "node:path";
@@ -83,8 +84,7 @@ interface OptsGlobal {
   maUrl: string;
   maUser: string;
   month: [number, number];
-  quiet: boolean;
-  verbose: number;
+  quiet: number;
   zPptrConnectUrl?: string;
   zPptrCookieLoad?: string;
   zPptrCookieSave?: string;
@@ -102,8 +102,8 @@ program
   .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
   .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
   .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(cliParseMonth(datePrevMonth(), null), datePrevMonth()).argParser(cliParseMonth))
-  .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
-  .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(cliIncreaseVerbosity).conflicts("quiet"))
+  .addOption(new commander.Option("-q, --quiet", "quiet mode; -q to suppress debug log, -qq to suppress info log, -qqq to suppress warn log, -qqqq to suppress error log").default(0).argParser((_undefined, previous: number) => previous + 1))
+  .addOption(new commander.Option("-v, --verbose").argParser(() => logger.warn("-v, --verbose オプションは3.0.0で削除されました")))
   .addOption(new commander.Option("--z-pptr-connect-url <url>").hideHelp().conflicts(["zPptrLaunchHandleSigint", "zPptrLaunchHeadless"]))
   .addOption(new commander.Option("--z-pptr-cookie-load <path>").hideHelp().conflicts(["zPptrCookieSave"]))
   .addOption(new commander.Option("--z-pptr-cookie-save <path>").hideHelp().conflicts(["zPptrCookieLoad"]))
@@ -145,14 +145,13 @@ class Queue<T> {
 const cliCommandExitStatus = new Queue<number>();
 
 function cliCommandInit(): OptsGlobal {
-  if (program.opts().quiet === true) {
-    logger.level = Logger.Level.Error;
-  } else if (program.opts().verbose === 0) {
-    logger.level = Logger.Level.Warn;
-  } else if (program.opts().verbose === 1) {
-    logger.level = Logger.Level.Info;
-  } else if (program.opts().verbose >= 1) {
-    logger.level = Logger.Level.Debug;
+  // prettier-ignore
+  switch (true) {
+    case program.opts().quiet === 0: logger.level = Logger.Level.Debug; break;
+    case program.opts().quiet === 1: logger.level = Logger.Level.Info; break;
+    case program.opts().quiet === 2: logger.level = Logger.Level.Warn; break;
+    case program.opts().quiet === 3: logger.level = Logger.Level.Error; break;
+    case program.opts().quiet >= 4: logger.level = Logger.Level.Silent; break;
   }
 
   logger.debug(`${path.basename(__filename)} version ${VERSION} PID ${process.pid}`);
@@ -161,9 +160,25 @@ function cliCommandInit(): OptsGlobal {
   return program.opts();
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function cliIncreaseVerbosity(value: string /* actually undefined */, previous: number): number {
-  return previous + 1;
+/*
+NODE_OPTIONS="--enable-source-maps --import @power-assert/node" KOUSU_TEST=1 kousu
+NODE_OPTIONS="--enable-source-maps --import @power-assert/node --inspect-wait" KOUSU_TEST=1 kousu
+*/
+if (process.env.KOUSU_TEST) {
+  logger.warn("KOUSU_TEST");
+  if (process.env.NODE_OPTIONS !== undefined) {
+    process.env.NODE_OPTIONS = strNodeOptionsRemoveInspect(process.env.NODE_OPTIONS);
+  }
+  const { KOUSU_TEST, ...env } = process.env;
+  let r; // result of child_process.spawnSync()
+  let out, err; // previous stdout, stderr
+
+  // eslint-disable-next-line prefer-const
+  r = child_process.spawnSync(`kousu -v`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, /^\d{4}-\d{2}-\d{2} .+ -v, --verbose オプションは3.0.0で削除されました(\r?\n)Usage: kousu /);
+  // eslint-disable-next-line prefer-const
+  [out, err] = [r.stdout, r.stderr];
 }
 
 // -----------------------------------------------------------------------------
@@ -435,6 +450,33 @@ async function $x1(
 
 async function sleep(milliSeconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliSeconds));
+}
+
+function strNodeOptionsRemoveInspect(arg: string): string {
+  // Remove:
+  //  --inspect[=[host:]port]
+  //  --inspect-brk[=[host:]port]
+  //  --inspect-port=[host:]port
+  //  --inspect-publish-uid=stderr,http
+  //  --inspect-wait=[host:]port
+  //  --inspect=[host:]port
+  // ↑ "=" may be [ \t]+
+
+  // --inspect* [host:]port
+  // not tested
+  for (const match of arg.matchAll(/(?<=^| )--inspect\S* (\d+:)?\d+(?=$| )/g)) {
+    arg = arg.replace(match[0], ``);
+  }
+  // --inspect-publish-uid stderr,http
+  // not tested
+  for (const match of arg.matchAll(/(?<=^| )--inspect-publish-uid\S*(stderr|http)(?=$| )/g)) {
+    arg = arg.replace(match[0], ``);
+  }
+  // --inspect*
+  for (const match of arg.matchAll(/(?<=^| )--inspect\S*(?=$| )/g)) {
+    arg = arg.replace(match[0], ``);
+  }
+  return arg;
 }
 
 function unreachable(): never {

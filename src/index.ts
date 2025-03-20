@@ -10,6 +10,6 @@ export { VERSION } from "./cli.js";
 
 import { cliMain } from "./cli.js";
 
-if (esMain(import.meta)) {
+if (esMain(import.meta) && !process.env.KOUSU_TEST) {
   await cliMain();
 }
