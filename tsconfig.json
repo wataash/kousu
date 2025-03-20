@@ -1,9 +1,8 @@
 {
   "compilerOptions": {
-    "moduleResolution": "node",
-    "target": "es2020", // for node 14 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
-    "lib": ["ES2020"], // for node 14 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
-    "module": "commonjs",
+    "target": "ES2022", // for node 18 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
+    "lib": ["ES2023"], // for node 18 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
+    "module": "node16", // for node 18 https://github.com/microsoft/TypeScript/wiki/Node-Target-Mapping
     "allowJs": true,
     "outDir": "dist",
     "inlineSourceMap": true,
