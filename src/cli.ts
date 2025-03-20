@@ -14,7 +14,6 @@ import * as fs from "node:fs";
 import * as path from "node:path";
 
 import * as commander from "@commander-js/extra-typings";
-import { program } from "@commander-js/extra-typings";
 import * as puppeteer from "puppeteer";
 import { Browser, ElementHandle, Page } from "puppeteer";
 import * as xmldom from "@xmldom/xmldom";
@@ -23,6 +22,7 @@ import * as xpath from "xpath";
 import { Logger } from "./logger";
 
 const logger = new Logger();
+const program = new commander.Command();
 
 // -----------------------------------------------------------------------------
 // lib
