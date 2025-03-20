@@ -11,6 +11,7 @@ import assert from "assert"; // in babel: replaced with: import assert from "pow
 // import assert from "node:assert/strict";
 
 import * as fs from "node:fs";
+import * as url from "node:url";
 import * as path from "node:path";
 
 import * as commander from "@commander-js/extra-typings";
@@ -19,8 +20,9 @@ import { Browser, ElementHandle, Page } from "puppeteer";
 import * as xmldom from "@xmldom/xmldom";
 import * as xpath from "xpath";
 
-import { Logger } from "./logger";
+import { Logger } from "./logger.js";
 
+const __filename = url.fileURLToPath(import.meta.url);
 const logger = new Logger();
 const program = new commander.Command();
 
