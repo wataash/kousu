@@ -335,7 +335,7 @@ class Queue<T> {
   }
 }
 
-function sleep(milliSeconds: number): Promise<void> {
+async function sleep(milliSeconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliSeconds));
 }
 
