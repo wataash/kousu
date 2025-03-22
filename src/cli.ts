@@ -555,7 +555,6 @@ function errorOutJson(value: string /* actually undefined */, previous: undefine
 program
   .command("import-kinmu")
   .description("MA-EYESにログインして「勤務時間取込」「保存」を行う")
-  .allowExcessArguments(false)
   // TODO:
   // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (opts: {}) => {
@@ -670,7 +669,6 @@ program
 program
   .command("get")
   .description("MA-EYESにログインして工数実績を取得する")
-  .allowExcessArguments(false)
   .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
   .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
   .argument("<file>", "JSONの出力パス")
@@ -1233,7 +1231,6 @@ function errorInJson(value: string /* actually undefined */, previous: undefined
 program
   .command("put")
   .description("MA-EYESにログインして工数実績を入力する")
-  .allowExcessArguments(false)
   .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
   .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
   .argument("<file>", "入力するJSONのパス")
