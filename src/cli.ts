@@ -544,109 +544,109 @@ program
   // TODO:
   // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (opts: {}) => {
-    const optsGlobal = cliCommandInit();
+  const optsGlobal = cliCommandInit();
 
-    const [browser, page] = await pptrBrowserPage(
-      optsGlobal.ignoreHttps,
-      optsGlobal.zPptrConnectUrl || null,
-      optsGlobal.zPptrLaunchHandleSigint,
-      optsGlobal.zPptrLaunchHeadless
-    );
+  const [browser, page] = await pptrBrowserPage(
+    optsGlobal.ignoreHttps,
+    optsGlobal.zPptrConnectUrl || null,
+    optsGlobal.zPptrLaunchHandleSigint,
+    optsGlobal.zPptrLaunchHeadless
+  );
 
-    await maEyesLogin(
-      page,
-      optsGlobal.maUrl,
-      optsGlobal.maUser,
-      optsGlobal.maPass,
-      optsGlobal.zPptrCookieLoad || null,
-      optsGlobal.zPptrCookieSave || null
-    );
-    if ("zPptrCookieSave" in optsGlobal) {
-      logger.info("cookie-save done;");
-      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-      logger.debug("bye");
-      cliCommandExitStatus.push(0);
-    }
-
-    await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
-
-    // <table class="ui-datepicker-calendar">
-    // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr")
-    // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td")
-    // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td[@class=\" calendar-date\"]")  weekday
-    // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td[@class=\"ui-datepicker-week-end calendar-date holiday\"]")  holiday
-    // $x("//table[@class=\"-datepicker-calendar\"]/tbody/tr/td[@class=\" calendar-date\"]" or @class=\"ui-datepicker-week-end calendar-date holiday\"]")  workday or holiday
-
-    // 2020-08
-    // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td") -> (42)
-    //  月       火       水       木       金       土       日
-    //  [0]      [1]      [2]      [3]      [4]     C[5]  1   [6]  2
-    // C[7] 3    [8] 4    [9] 5    [10] 6   [11] 7   [12] 8   [13] 9
-    // C[14]10   [15]11   [16]12   [17]13   [18]14   [19]15   [20]16
-    // C[21]17   [22]18   [23]19   [24]20   [25]21   [26]22   [27]23
-    // C[28]24   [29]25   [30]26   [31]27   [32]28   [33]29   [34]30
-    // C[35]31   [36]     [37]     [38]     [39]     [40]1    [41]
-    // C: click & load & save
-    // @ts-expect-error TODO
-    const elemsCalendarDate = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-    for (let i = 0; i < elemsCalendarDate.length; i++) {
-      // [XXX-$x-again]: We can't iterate over elemsCalendarDate:
-      //   for (const [i, elem] of elemsCalendarDate.entries()) {
-      //   since DOM is updated within the loop (just try it if you don't get it).
-      // @ts-expect-error TODO
-      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-      const elemDate = elemsCalendarDate2[i];
-      // @ts-expect-error TODO
-      const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
-      if (txt === "\u00A0") {
-        // nbsp
-        continue;
-      }
-      if (i % 7 !== 0 && txt !== "1") {
-        // not monday nor 1st
-        continue;
-      }
-      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-      // await Promise.all([page.waitForNavigation(), (elemDate as unknown as HTMLElement).click()]); // halts
-      await (elemDate as unknown as HTMLElement).click();
-      await maEyesWaitLoading(page);
-
-      // <button id="workResultView:j_idt52" name="workResultView:j_idt52" class="ui-button ..."
-      //   onclick="PrimeFaces.ab({s:&quot;workResultView:j_idt52&quot;,u:&quot;workResultView&quot;});return false;"
-      //   type="submit" role="button" aria-disabled="false">
-      //   <span class="ui-button-text ui-c">勤務時間取込</span></button>
-      logger.info("勤務時間取込");
-      // // page.evaluate doesn't wait
-      // await page.evaluate('PrimeFaces.ab({s:"workResultView:j_idt52",u:"workResultView"});');
-      // // ; -> Error: Evaluation failed: SyntaxError: Unexpected token ';'
-      // await page.waitForFunction('PrimeFaces.ab({s:"workResultView:j_idt52",u:"workResultView"});');
-      // // never return? debug again
-      // await page.waitForFunction("PrimeFaces.ab({s:\"workResultView:j_idt52\",u:\"workResultView\"})");
-      await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt52")]);
-
-      // <button id="workResultView:j_idt50:saveButton" name="workResultView:j_idt50:saveButton"
-      //   class="ui-button ..."
-      //   onclick="PrimeFaces.bcn(this,event,[function(event){MA.Utils.reflectEditingCellValue();},function(event){PrimeFaces.ab({s:&quot;workResultView:j_idt50:saveButton&quot;,u:&quot;workResultView&quot;});return false;}]);"
-      //   tabindex="0" type="submit" role="button" aria-disabled="false">
-      //   <span class="ui-button-icon-left ui-icon ui-c fa fa-save"></span>
-      //   <span class="ui-button-text ui-c">保存</span></button>
-      logger.info("保存");
-      // // throws: Error: Evaluation failed: TypeError: Cannot read property 'preventDefault' of undefined
-      // //   at Object.bcn (https://.../maeyes/javax.faces.resource/core.js.xhtml?ln=primefaces&v=6.3-SNAPSHOT:520:34)
-      // await page.evaluate(
-      //   "PrimeFaces.bcn(this,event,[function(event){MA.Utils.reflectEditingCellValue();},function(event){PrimeFaces.ab({s:\"workResultView:j_idt50:saveButton\",u:\"workResultView\"});return false;}]);"
-      // );
-      // // halts
-      // await Promise.all([page.waitForNavigation(), page.click("#workResultView\\:j_idt50\\:saveButton")]);
-      await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt50\\:saveButton")]);
-
-      logger.debug("next");
-    }
-
+  await maEyesLogin(
+    page,
+    optsGlobal.maUrl,
+    optsGlobal.maUser,
+    optsGlobal.maPass,
+    optsGlobal.zPptrCookieLoad || null,
+    optsGlobal.zPptrCookieSave || null
+  );
+  if ("zPptrCookieSave" in optsGlobal) {
+    logger.info("cookie-save done;");
     await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
-  });
+  }
+
+  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+
+  // <table class="ui-datepicker-calendar">
+  // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr")
+  // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td")
+  // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td[@class=\" calendar-date\"]")  weekday
+  // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td[@class=\"ui-datepicker-week-end calendar-date holiday\"]")  holiday
+  // $x("//table[@class=\"-datepicker-calendar\"]/tbody/tr/td[@class=\" calendar-date\"]" or @class=\"ui-datepicker-week-end calendar-date holiday\"]")  workday or holiday
+
+  // 2020-08
+  // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr/td") -> (42)
+  //  月       火       水       木       金       土       日
+  //  [0]      [1]      [2]      [3]      [4]     C[5]  1   [6]  2
+  // C[7] 3    [8] 4    [9] 5    [10] 6   [11] 7   [12] 8   [13] 9
+  // C[14]10   [15]11   [16]12   [17]13   [18]14   [19]15   [20]16
+  // C[21]17   [22]18   [23]19   [24]20   [25]21   [26]22   [27]23
+  // C[28]24   [29]25   [30]26   [31]27   [32]28   [33]29   [34]30
+  // C[35]31   [36]     [37]     [38]     [39]     [40]1    [41]
+  // C: click & load & save
+  // @ts-expect-error TODO
+  const elemsCalendarDate = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+  for (let i = 0; i < elemsCalendarDate.length; i++) {
+    // [XXX-$x-again]: We can't iterate over elemsCalendarDate:
+    //   for (const [i, elem] of elemsCalendarDate.entries()) {
+    //   since DOM is updated within the loop (just try it if you don't get it).
+    // @ts-expect-error TODO
+    const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+    const elemDate = elemsCalendarDate2[i];
+    // @ts-expect-error TODO
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
+    if (txt === "\u00A0") {
+      // nbsp
+      continue;
+    }
+    if (i % 7 !== 0 && txt !== "1") {
+      // not monday nor 1st
+      continue;
+    }
+    logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
+    // await Promise.all([page.waitForNavigation(), (elemDate as unknown as HTMLElement).click()]); // halts
+    await (elemDate as unknown as HTMLElement).click();
+    await maEyesWaitLoading(page);
+
+    // <button id="workResultView:j_idt52" name="workResultView:j_idt52" class="ui-button ..."
+    //   onclick="PrimeFaces.ab({s:&quot;workResultView:j_idt52&quot;,u:&quot;workResultView&quot;});return false;"
+    //   type="submit" role="button" aria-disabled="false">
+    //   <span class="ui-button-text ui-c">勤務時間取込</span></button>
+    logger.info("勤務時間取込");
+    // // page.evaluate doesn't wait
+    // await page.evaluate('PrimeFaces.ab({s:"workResultView:j_idt52",u:"workResultView"});');
+    // // ; -> Error: Evaluation failed: SyntaxError: Unexpected token ';'
+    // await page.waitForFunction('PrimeFaces.ab({s:"workResultView:j_idt52",u:"workResultView"});');
+    // // never return? debug again
+    // await page.waitForFunction("PrimeFaces.ab({s:\"workResultView:j_idt52\",u:\"workResultView\"})");
+    await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt52")]);
+
+    // <button id="workResultView:j_idt50:saveButton" name="workResultView:j_idt50:saveButton"
+    //   class="ui-button ..."
+    //   onclick="PrimeFaces.bcn(this,event,[function(event){MA.Utils.reflectEditingCellValue();},function(event){PrimeFaces.ab({s:&quot;workResultView:j_idt50:saveButton&quot;,u:&quot;workResultView&quot;});return false;}]);"
+    //   tabindex="0" type="submit" role="button" aria-disabled="false">
+    //   <span class="ui-button-icon-left ui-icon ui-c fa fa-save"></span>
+    //   <span class="ui-button-text ui-c">保存</span></button>
+    logger.info("保存");
+    // // throws: Error: Evaluation failed: TypeError: Cannot read property 'preventDefault' of undefined
+    // //   at Object.bcn (https://.../maeyes/javax.faces.resource/core.js.xhtml?ln=primefaces&v=6.3-SNAPSHOT:520:34)
+    // await page.evaluate(
+    //   "PrimeFaces.bcn(this,event,[function(event){MA.Utils.reflectEditingCellValue();},function(event){PrimeFaces.ab({s:\"workResultView:j_idt50:saveButton\",u:\"workResultView\"});return false;}]);"
+    // );
+    // // halts
+    // await Promise.all([page.waitForNavigation(), page.click("#workResultView\\:j_idt50\\:saveButton")]);
+    await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt50\\:saveButton")]);
+
+    logger.debug("next");
+  }
+
+  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  logger.debug("bye");
+  cliCommandExitStatus.push(0);
+});
 
 // -----------------------------------------------------------------------------
 // command - get
@@ -710,139 +710,139 @@ program
   // .addArgument(new commander.Argument("<file>", "JSONの出力パス"))
   .allowExcessArguments(true)
   .action(async (opts: { outJson?: string }, command: commander.Command) => {
-    const optsGlobal = cliCommandInit();
+  const optsGlobal = cliCommandInit();
 
-    if (command.args.length === 1) {
-      if (opts.outJson !== undefined) {
-        throw new AppError(`-o ${opts.outJson} ${command.args[0]} は両方同時に指定できません; -o のみ指定することを推奨します`);
-      }
-      opts.outJson = command.args[0];
+  if (command.args.length === 1) {
+    if (opts.outJson !== undefined) {
+      throw new AppError(`-o ${opts.outJson} ${command.args[0]} は両方同時に指定できません; -o のみ指定することを推奨します`);
     }
-    if (command.args.length > 1) {
-      throw new AppError(`too many arguments: ${command.args.join(" ")}`);
-    }
-    if (opts.outJson === undefined) {
-      throw new AppError(`-o, --out-json <path> が必要です`);
-    }
+    opts.outJson = command.args[0];
+  }
+  if (command.args.length > 1) {
+    throw new AppError(`too many arguments: ${command.args.join(" ")}`);
+  }
+  if (opts.outJson === undefined) {
+    throw new AppError(`-o, --out-json <path> が必要です`);
+  }
 
-    const [browser, page] = await pptrBrowserPage(
-      optsGlobal.ignoreHttps,
-      optsGlobal.zPptrConnectUrl || null,
-      optsGlobal.zPptrLaunchHandleSigint,
-      optsGlobal.zPptrLaunchHeadless
-    );
+  const [browser, page] = await pptrBrowserPage(
+    optsGlobal.ignoreHttps,
+    optsGlobal.zPptrConnectUrl || null,
+    optsGlobal.zPptrLaunchHandleSigint,
+    optsGlobal.zPptrLaunchHeadless
+  );
 
-    await maEyesLogin(
-      page,
-      optsGlobal.maUrl,
-      optsGlobal.maUser,
-      optsGlobal.maPass,
-      optsGlobal.zPptrCookieLoad || null,
-      optsGlobal.zPptrCookieSave || null
-    );
-    if ("zPptrCookieSave" in optsGlobal) {
-      logger.info("cookie-save done;");
-      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-      logger.debug("bye");
-      cliCommandExitStatus.push(0);
-    }
-
-    await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
-
-    // [{
-    //   date: "7/27(月)";
-    //   begin: "15:04";
-    //   end: "15:04";
-    //   yokujitsu: false;
-    //   kyukei: 0;
-    //   yasumi: "";
-    //   sagyou: 0;
-    //   fumei: 0;
-    //   jisseki: {
-    //     proj1: 0;
-    //   }
-    // }
-    const kinmuJissekis: (Kinmu & Jisseki)[] = [];
-
-    const projects: { [projectId: string]: ProjectName } = {};
-
-    const elemsCalendarDate = await $x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-    for (let i = 0; i < elemsCalendarDate.length; i++) {
-      // click monday
-      // see [XXX-$x-again]
-      // @ts-expect-error TODO
-      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-      const elemDate = elemsCalendarDate2[i];
-      // @ts-expect-error TODO
-      const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
-      // nbsp
-      if (txt === "\u00A0") {
-        continue;
-      }
-      if (i % 7 !== 0 && txt !== "1") {
-        // not monday nor 1st
-        continue;
-      }
-      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-      await Promise.all([maEyesWaitLoading(page), (elemDate as unknown as HTMLElement).click()]);
-
-      const kinmus = await (async () => {
-        const elem = await $x1(page, `//table[@id="workResultView:j_idt69"]`);
-        const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
-        const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
-        return kinmus;
-      })();
-
-      const [jissekis, projects_] = await (async () => {
-        const elem = await $x1(page, `//div[@id="workResultView:items"]`);
-        const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
-        return parseWeekJisseki(html);
-      })();
-
-      assert.ok(kinmus.length === 7);
-      assert.ok(jissekis.length === 7);
-      // TODO: projects_ が全ての週で一致するか確認
-
-      for (const [i, kinmu] of kinmus.entries()) {
-        if (kinmu === null) {
-          continue;
-        }
-        kinmuJissekis.push(Object.assign({}, kinmu, jissekis[i]));
-      }
-      Object.assign(projects, projects_);
-
-      logger.debug("next");
-    }
-
-    // {
-    //   "version": "0.3.0",
-    //   "projects": {
-    //     "proj1": "proj1 name"
-    //     "proj2": "proj2 name"
-    //   },
-    //   "jissekis": [
-    //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":0,"yasumi":"全休","sagyou":0,"fumei":0,"jisseki":{"proj1":0,"proj2":0}},
-    //     {"date":"1/2(土)",...},
-    //     ...
-    //   ]
-    // }
-    // const json = `${JSON.stringify(kinmuJissekis, null, 2)}\n`;
-    const json = `{
-      "version": "0.3.0",
-      "projects": ${JSON.stringify(projects, null, 2)
-        .split("\n")
-        .map((row) => `  ${row}`)
-        .join("\n")},
-      "jissekis": [\n${kinmuJissekis.map((kousu) => `    ${JSON.stringify(kousu)}`).join(",\n")}
-      ]
-    }
-    `;
-
-    fs.writeFileSync(file, json);
+  await maEyesLogin(
+    page,
+    optsGlobal.maUrl,
+    optsGlobal.maUser,
+    optsGlobal.maPass,
+    optsGlobal.zPptrCookieLoad || null,
+    optsGlobal.zPptrCookieSave || null
+  );
+  if ("zPptrCookieSave" in optsGlobal) {
+    logger.info("cookie-save done;");
     await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
-  });
+  }
+
+  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+
+  // [{
+  //   date: "7/27(月)";
+  //   begin: "15:04";
+  //   end: "15:04";
+  //   yokujitsu: false;
+  //   kyukei: 0;
+  //   yasumi: "";
+  //   sagyou: 0;
+  //   fumei: 0;
+  //   jisseki: {
+  //     proj1: 0;
+  //   }
+  // }
+  const kinmuJissekis: (Kinmu & Jisseki)[] = [];
+
+  const projects: { [projectId: string]: ProjectName } = {};
+
+  const elemsCalendarDate = await $x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+  for (let i = 0; i < elemsCalendarDate.length; i++) {
+    // click monday
+    // see [XXX-$x-again]
+    // @ts-expect-error TODO
+    const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+    const elemDate = elemsCalendarDate2[i];
+    // @ts-expect-error TODO
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
+    // nbsp
+    if (txt === "\u00A0") {
+      continue;
+    }
+    if (i % 7 !== 0 && txt !== "1") {
+      // not monday nor 1st
+      continue;
+    }
+    logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
+    await Promise.all([maEyesWaitLoading(page), (elemDate as unknown as HTMLElement).click()]);
+
+    const kinmus = await (async () => {
+      const elem = await $x1(page, `//table[@id="workResultView:j_idt69"]`);
+      const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
+      const kinmus = parseWeekKinmu(html); // Object.assign(kinmu, parseWeekKinmu(html));
+      return kinmus;
+    })();
+
+    const [jissekis, projects_] = await (async () => {
+      const elem = await $x1(page, `//div[@id="workResultView:items"]`);
+      const html = await elem.evaluate((el) => (el as unknown as HTMLElement).outerHTML);
+      return parseWeekJisseki(html);
+    })();
+
+    assert.ok(kinmus.length === 7);
+    assert.ok(jissekis.length === 7);
+    // TODO: projects_ が全ての週で一致するか確認
+
+    for (const [i, kinmu] of kinmus.entries()) {
+      if (kinmu === null) {
+        continue;
+      }
+      kinmuJissekis.push(Object.assign({}, kinmu, jissekis[i]));
+    }
+    Object.assign(projects, projects_);
+
+    logger.debug("next");
+  }
+
+  // {
+  //   "version": "0.3.0",
+  //   "projects": {
+  //     "proj1": "proj1 name"
+  //     "proj2": "proj2 name"
+  //   },
+  //   "jissekis": [
+  //     {"date":"1/1(金)","begin":"00:00","end":"00:00","yokujitsu":false,"kyukei":0,"yasumi":"全休","sagyou":0,"fumei":0,"jisseki":{"proj1":0,"proj2":0}},
+  //     {"date":"1/2(土)",...},
+  //     ...
+  //   ]
+  // }
+  // const json = `${JSON.stringify(kinmuJissekis, null, 2)}\n`;
+  const json = `{
+    "version": "0.3.0",
+    "projects": ${JSON.stringify(projects, null, 2)
+      .split("\n")
+      .map((row) => `  ${row}`)
+      .join("\n")},
+    "jissekis": [\n${kinmuJissekis.map((kousu) => `    ${JSON.stringify(kousu)}`).join(",\n")}
+    ]
+  }
+  `;
+
+  fs.writeFileSync(file, json);
+  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  logger.debug("bye");
+  cliCommandExitStatus.push(0);
+});
 
 // 勤務表パース
 function parseWeekKinmu(html: string): (Kinmu | null)[] {
@@ -1271,169 +1271,169 @@ program
   // TODO:
   // eslint-disable-next-line @typescript-eslint/ban-types
   .action(async (file: string, opts: {}) => {
-    const optsGlobal = cliCommandInit();
+  const optsGlobal = cliCommandInit();
 
-    let  compat: "0.1.0" | null = null;
+  let  compat: "0.1.0" | null = null;
 
-    const kousu: Kousu | Kousu010 = (() => {
-      const j = JSON.parse(fs.readFileSync(file, "utf8")) as Kousu | Kousu010;
-      const e = (msg: string) => {
-        throw new AppError(`invalid JSON: ${msg}`);
-      };
-      // eslint-disable-next-line no-warning-comments
-      // TODO: more strict check with quicktype
-      if (j.version === undefined) e(`"version" not defined, must be "0.3.0"`);
-      if (j.version !== "0.1.0" && j.version !== "0.3.0") e(`"version" must be "0.3.0"`);
-      if (j.version === "0.1.0") compat = "0.1.0";
-      if (j.projects === undefined) e(`"projects" not defined, must be object ({"project": "projectName"})`);
-      if (!isObject(j.projects)) e(`"projects" must be object ({"project": "projectName"})`);
-      if (j.jissekis === undefined) e(`"jissekis" not defined, must be array`);
-      if (!Array.isArray(j.jissekis)) e(`"projects" must be array`);
-      return j;
-    })();
+  const kousu: Kousu | Kousu010 = (() => {
+    const j = JSON.parse(fs.readFileSync(file, "utf8")) as Kousu | Kousu010;
+    const e = (msg: string) => {
+      throw new AppError(`invalid JSON: ${msg}`);
+    };
+    // eslint-disable-next-line no-warning-comments
+    // TODO: more strict check with quicktype
+    if (j.version === undefined) e(`"version" not defined, must be "0.3.0"`);
+    if (j.version !== "0.1.0" && j.version !== "0.3.0") e(`"version" must be "0.3.0"`);
+    if (j.version === "0.1.0") compat = "0.1.0";
+    if (j.projects === undefined) e(`"projects" not defined, must be object ({"project": "projectName"})`);
+    if (!isObject(j.projects)) e(`"projects" must be object ({"project": "projectName"})`);
+    if (j.jissekis === undefined) e(`"jissekis" not defined, must be array`);
+    if (!Array.isArray(j.jissekis)) e(`"projects" must be array`);
+    return j;
+  })();
 
-    const mapDateJisseki = (() => {
-      if (compat === "0.1.0") {
-        return (kousu as Kousu010).jissekis.reduce((acc, jisseki) => {
-          acc[jisseki.date] = jisseki;
-          return acc;
-        }, {} as { [date: string]: typeof kousu.jissekis[number] });
-      }
-      return (kousu as Kousu).jissekis.reduce((acc, jisseki) => {
+  const mapDateJisseki = (() => {
+    if (compat === "0.1.0") {
+      return (kousu as Kousu010).jissekis.reduce((acc, jisseki) => {
         acc[jisseki.date] = jisseki;
         return acc;
       }, {} as { [date: string]: typeof kousu.jissekis[number] });
-    })();
-    const [browser, page] = await pptrBrowserPage(
-      optsGlobal.ignoreHttps,
-      optsGlobal.zPptrConnectUrl || null,
-      optsGlobal.zPptrLaunchHandleSigint,
-      optsGlobal.zPptrLaunchHeadless
-    );
-
-    await maEyesLogin(
-      page,
-      optsGlobal.maUrl,
-      optsGlobal.maUser,
-      optsGlobal.maPass,
-      optsGlobal.zPptrCookieLoad || null,
-      optsGlobal.zPptrCookieSave || null
-    );
-    if ("zPptrCookieSave" in optsGlobal) {
-      logger.info("cookie-save done;");
-      await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-      logger.debug("bye");
-      cliCommandExitStatus.push(0);
     }
+    return (kousu as Kousu).jissekis.reduce((acc, jisseki) => {
+      acc[jisseki.date] = jisseki;
+      return acc;
+    }, {} as { [date: string]: typeof kousu.jissekis[number] });
+  })();
+  const [browser, page] = await pptrBrowserPage(
+    optsGlobal.ignoreHttps,
+    optsGlobal.zPptrConnectUrl || null,
+    optsGlobal.zPptrLaunchHandleSigint,
+    optsGlobal.zPptrLaunchHeadless
+  );
 
-    await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
-
-    const elemsCalendarDate = await $x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-    for (let i = 0; i < elemsCalendarDate.length; i++) {
-      // click monday
-      // see [XXX-$x-again]
-      // @ts-expect-error TODO
-      const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
-      const elemDate = elemsCalendarDate2[i];
-      // @ts-expect-error TODO
-      const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
-      // nbsp; 前後の月
-      if (txt === "\u00A0") {
-        continue;
-      }
-      if (i % 7 !== 0 && txt !== "1") {
-        // not monday nor 1st
-        continue;
-      }
-      logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
-      await Promise.all([maEyesWaitLoading(page), (elemDate as unknown as HTMLElement).click()]);
-
-      // (null | string)[7]
-      // ["10/28(月)", ... "11/1(金)", "11/2(土)", "11/3(日)"]
-      const dates = await (async () => {
-        // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td`)
-        const elems = await $xn(
-          page,
-          `//table[@id="workResultView:j_idt69"]//tr[1]/td`,
-          8,
-        );
-        return Promise.all(
-          // @ts-expect-error TODO
-          elems.slice(1).map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
-        );
-      })();
-
-      let modified = false;
-      for (const [iDate, date] of dates.entries()) {
-        const jisseki = mapDateJisseki[date];
-        if (jisseki === undefined) {
-          logger.debug(`${date} not found in JSON; skip`);
-          continue;
-        }
-        // $x(`//tbody[@id="workResultView:items_data"]/tr/td[4]/text()`)
-        const elemsProject = await $x(page, `//tbody[@id="workResultView:items_data"]/tr/td[4]`);
-        const projects = await Promise.all(
-          // @ts-expect-error TODO
-          elemsProject.map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
-        );
-        for (const [iProj, project] of projects.entries()) {
-          const timeJisseki = (() => {
-            const tmp = jisseki.jisseki[project];
-            if (tmp === undefined) {
-              logger.warn(`project ${project} not found in 工数実績入力表; skip`);
-              return null;
-            }
-            if (typeof tmp === "string") {
-              if (compat !== "0.1.0") {
-                throw new AppError(`BUG: jisseki.jisseki[project]: ${tmp}`);
-              }
-              return tmp;
-            }
-            return tmp.toFixed(1);
-          })();
-          if (timeJisseki === null) {
-            continue;
-          }
-          // $x(`//tbody[@id="workResultView:items_data"]/tr[1]/td[7]`)[0]
-          const elem = await $x1(
-            page,
-            `//tbody[@id="workResultView:items_data"]/tr[${iProj + 1}]/td[${iDate + 7}]`,
-          );
-          // await elem.evaluate((el) => (el as unknown as HTMLElement).innerText = "9.9");
-          const txt = await elem.evaluate((el) => (el as unknown as HTMLElement).innerText);
-          if (txt === timeJisseki) {
-            continue;
-          }
-          modified = true;
-          logger.debug(`${date} ${project} ${kousu.projects[project]} ${timeJisseki}`);
-          await (elem as unknown as HTMLElement).click();
-          await page.keyboard.type(timeJisseki);
-          // 値の確定・送信
-          // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
-          await Promise.all([
-            maEyesWaitLoading(page),
-            (
-              (await $x1(
-                page,
-                `//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`,
-              )) as unknown as HTMLElement
-            ).click(),
-          ]);
-          "breakpoint".match(/breakpoint/);
-        }
-        "breakpoint".match(/breakpoint/);
-      }
-
-      if (!modified) {
-        logger.debug("unchanged; skip 保存");
-        continue;
-      }
-      logger.info("保存");
-      await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt50\\:saveButton")]);
-      "breakpoint".match(/breakpoint/);
-    }
-
+  await maEyesLogin(
+    page,
+    optsGlobal.maUrl,
+    optsGlobal.maUser,
+    optsGlobal.maPass,
+    optsGlobal.zPptrCookieLoad || null,
+    optsGlobal.zPptrCookieSave || null
+  );
+  if ("zPptrCookieSave" in optsGlobal) {
+    logger.info("cookie-save done;");
     await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
     logger.debug("bye");
     cliCommandExitStatus.push(0);
-  });
+  }
+
+  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+
+  const elemsCalendarDate = await $x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+  for (let i = 0; i < elemsCalendarDate.length; i++) {
+    // click monday
+    // see [XXX-$x-again]
+    // @ts-expect-error TODO
+    const elemsCalendarDate2 = await page.$x(`//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
+    const elemDate = elemsCalendarDate2[i];
+    // @ts-expect-error TODO
+    const txt = await elemDate.evaluate((el) => (el as unknown as HTMLElement).innerText);
+    // nbsp; 前後の月
+    if (txt === "\u00A0") {
+      continue;
+    }
+    if (i % 7 !== 0 && txt !== "1") {
+      // not monday nor 1st
+      continue;
+    }
+    logger.info(`click: ${txt}(${["月", "火", "水", "木", "金", "土", "日"][i % 7]})`);
+    await Promise.all([maEyesWaitLoading(page), (elemDate as unknown as HTMLElement).click()]);
+
+    // (null | string)[7]
+    // ["10/28(月)", ... "11/1(金)", "11/2(土)", "11/3(日)"]
+    const dates = await (async () => {
+      // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td`)
+      const elems = await $xn(
+        page,
+        `//table[@id="workResultView:j_idt69"]//tr[1]/td`,
+        8,
+      );
+      return Promise.all(
+        // @ts-expect-error TODO
+        elems.slice(1).map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
+      );
+    })();
+
+    let modified = false;
+    for (const [iDate, date] of dates.entries()) {
+      const jisseki = mapDateJisseki[date];
+      if (jisseki === undefined) {
+        logger.debug(`${date} not found in JSON; skip`);
+        continue;
+      }
+      // $x(`//tbody[@id="workResultView:items_data"]/tr/td[4]/text()`)
+      const elemsProject = await $x(page, `//tbody[@id="workResultView:items_data"]/tr/td[4]`);
+      const projects = await Promise.all(
+        // @ts-expect-error TODO
+        elemsProject.map(async (elem) => elem.evaluate((el) => (el as unknown as HTMLElement).innerText))
+      );
+      for (const [iProj, project] of projects.entries()) {
+        const timeJisseki = (() => {
+          const tmp = jisseki.jisseki[project];
+          if (tmp === undefined) {
+            logger.warn(`project ${project} not found in 工数実績入力表; skip`);
+            return null;
+          }
+          if (typeof tmp === "string") {
+            if (compat !== "0.1.0") {
+              throw new AppError(`BUG: jisseki.jisseki[project]: ${tmp}`);
+            }
+            return tmp;
+          }
+          return tmp.toFixed(1);
+        })();
+        if (timeJisseki === null) {
+          continue;
+        }
+        // $x(`//tbody[@id="workResultView:items_data"]/tr[1]/td[7]`)[0]
+        const elem = await $x1(
+          page,
+          `//tbody[@id="workResultView:items_data"]/tr[${iProj + 1}]/td[${iDate + 7}]`,
+        );
+        // await elem.evaluate((el) => (el as unknown as HTMLElement).innerText = "9.9");
+        const txt = await elem.evaluate((el) => (el as unknown as HTMLElement).innerText);
+        if (txt === timeJisseki) {
+          continue;
+        }
+        modified = true;
+        logger.debug(`${date} ${project} ${kousu.projects[project]} ${timeJisseki}`);
+        await (elem as unknown as HTMLElement).click();
+        await page.keyboard.type(timeJisseki);
+        // 値の確定・送信
+        // $x(`//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`)
+        await Promise.all([
+          maEyesWaitLoading(page),
+          (
+            (await $x1(
+              page,
+              `//table[@id="workResultView:j_idt69"]//tr[1]/td[1]`,
+            )) as unknown as HTMLElement
+          ).click(),
+        ]);
+        "breakpoint".match(/breakpoint/);
+      }
+      "breakpoint".match(/breakpoint/);
+    }
+
+    if (!modified) {
+      logger.debug("unchanged; skip 保存");
+      continue;
+    }
+    logger.info("保存");
+    await Promise.all([maEyesWaitLoading(page), page.click("#workResultView\\:j_idt50\\:saveButton")]);
+    "breakpoint".match(/breakpoint/);
+  }
+
+  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  logger.debug("bye");
+  cliCommandExitStatus.push(0);
+});
