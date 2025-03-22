@@ -67,16 +67,7 @@ class CLI {
     if (match === null) {
       throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value})`);
     }
-    // XXX: want return [year, month]
-    const year = parseInt(match[1], 10);
-    const month = parseInt(match[2], 10);
-    if (isNaN(year)) {
-      throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid year)`);
-    }
-    if (isNaN(month)) {
-      throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid month)`);
-    }
-    return [year, month];
+    return [parseInt(match[1], 10), parseInt(match[2], 10)];
   }
 }
 
