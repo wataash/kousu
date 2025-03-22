@@ -28,33 +28,34 @@ const logger = new Logger();
 const program = new commander.Command();
 export const VERSION = "2.1.0";
 
-class AppError extends Error {
-  constructor(message: string, withStack = false) {
-    // https://www.typescriptlang.org/docs/handbook/release-notes/typescript-2-2.html
-    super(message);
-    Object.setPrototypeOf(this, new.target.prototype);
-    if (withStack) {
-      logger.errors(message);
-    } else {
-      logger.error(message);
-    }
-  }
-}
+class AppError extends Error {}
+
+class AppErrorStack extends Error {}
 
 // -----------------------------------------------------------------------------
 // cli
 
-export async function cliMain(): Promise<never> {
+export async function cliMain(): Promise<void> {
   try {
-    await program.parse(process.argv);
-    const exitStatus = await cliCommandExitStatus.pop();
-    process.exit(exitStatus);
+    await program.parseAsync(process.argv);
+    process.exitCode = await cliCommandExitStatus.pop();
+    return;
   } catch (e) {
     if (e instanceof AppError) {
-      // assert.ok(e.constructor.name === "AppError")
-      process.exit(1);
+      logger.error(e.message);
+      process.exitCode = 1;
+      return;
     }
+    if (e instanceof AppErrorStack) {
+      logger.error(e.message);
+      logger.info(e);
+      // throw e;
+      process.exitCode = 1;
+      return;
+    }
+    if (!(e instanceof Error)) throw e;
     logger.error(`unexpected error: ${e}`);
+    logger.error(`unexpected error: ${e.message}`);
     throw e;
   }
   unreachable();
@@ -477,7 +478,7 @@ function strNodeOptionsRemoveInspect(arg: string): string {
 }
 
 function unreachable(): never {
-  throw new AppError("BUG: unreachable", true);
+  throw new AppErrorStack("BUG: unreachable");
 }
 
 // -----------------------------------------------------------------------------
