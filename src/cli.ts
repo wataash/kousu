@@ -25,9 +25,7 @@ import { Logger } from "./logger.js";
 const __filename = url.fileURLToPath(import.meta.url);
 const logger = new Logger();
 const program = new commander.Command();
-
-// -----------------------------------------------------------------------------
-// lib
+export const VERSION = "2.1.0";
 
 class AppError extends Error {
   constructor(message: string, withStack = false) {
@@ -41,6 +39,135 @@ class AppError extends Error {
     }
   }
 }
+
+// -----------------------------------------------------------------------------
+// cli
+
+export async function cliMain(): Promise<never> {
+  try {
+    await program.parse(process.argv);
+    const exitStatus = await cliCommandExitStatus.pop();
+    process.exit(exitStatus);
+  } catch (e) {
+    if (e instanceof AppError) {
+      // assert.ok(e.constructor.name === "AppError")
+      process.exit(1);
+    }
+    logger.error(`unexpected error: ${e}`);
+    throw e;
+  }
+  unreachable();
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function cliParseMonth(value: string, previous: unknown): [number, number] {
+  const match = value.match(/^(\d{4})-(\d{2})$/);
+  if (match === null) {
+    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value})`);
+  }
+  // XXX: want return [year, month]
+  const year = parseInt(match[1], 10);
+  const month = parseInt(match[2], 10);
+  if (isNaN(year)) {
+    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid year)`);
+  }
+  if (isNaN(month)) {
+    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid month)`);
+  }
+  return [year, month];
+}
+
+interface OptsGlobal {
+  ignoreHttps: boolean;
+  maPass: string;
+  maUrl: string;
+  maUser: string;
+  month: [number, number];
+  quiet: boolean;
+  verbose: number;
+  zPptrConnectUrl?: string;
+  zPptrCookieLoad?: string;
+  zPptrCookieSave?: string;
+  zPptrLaunchHandleSigint: boolean;
+  zPptrLaunchHeadless: boolean;
+}
+
+// prettier-ignore
+program
+  .name("kousu")
+  .description("ビーブレイクシステムズMA-EYES（webアプリ版）の作業実績（工数）入力を行う")
+  .version(VERSION)
+  .addOption(new commander.Option("--ignore-https", "HTTPSエラーを無視する").default(false))
+  .addOption(new commander.Option("--ma-pass <pass>", "MA-EYESのパスワード").env("KOUSU_MA_PASS").makeOptionMandatory(true))
+  .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
+  .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
+  .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(cliParseMonth(datePrevMonth(), null), datePrevMonth()).argParser(cliParseMonth))
+  .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
+  .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(cliIncreaseVerbosity).conflicts("quiet"))
+  .addOption(new commander.Option("--z-pptr-connect-url <url>").hideHelp().conflicts(["zPptrLaunchHandleSigint", "zPptrLaunchHeadless"]))
+  .addOption(new commander.Option("--z-pptr-cookie-load <path>").hideHelp().conflicts(["zPptrCookieSave"]))
+  .addOption(new commander.Option("--z-pptr-cookie-save <path>").hideHelp().conflicts(["zPptrCookieLoad"]))
+  .addOption(new commander.Option("--no-z-pptr-launch-handle-sigint").hideHelp().conflicts(["zPptrConnectUrl"]))
+  .addOption(new commander.Option("--z-pptr-launch-headless").hideHelp().default(false).conflicts(["zPptrConnectUrl"]))
+  .alias(); // dummy
+
+class Queue<T> {
+  private readonly q: T[];
+  private readonly qWaiters: { resolve: (value: "resolved") => void }[];
+
+  constructor() {
+    this.q = [];
+    this.qWaiters = [];
+  }
+
+  push(elem: T): number {
+    const ret = this.q.unshift(elem); // XXX: slow; should be real queue
+    this.qWaiters.shift()?.resolve("resolved"); // XXX: slow; should be real queue
+    return ret;
+  }
+
+  async pop(): Promise<T> {
+    const ret = this.q.pop();
+    if (ret !== undefined) {
+      return ret;
+    }
+
+    const p = new Promise((resolve) => {
+      this.qWaiters.push({ resolve });
+    });
+    await p;
+    const ret2 = this.q.pop();
+    if (ret2 === undefined) unreachable();
+    return ret2;
+  }
+}
+
+const cliCommandExitStatus = new Queue<number>();
+
+function cliCommandInit(): OptsGlobal {
+  if (program.opts().quiet === true) {
+    logger.level = Logger.Level.Error;
+  } else if (program.opts().verbose === 0) {
+    logger.level = Logger.Level.Warn;
+  } else if (program.opts().verbose === 1) {
+    logger.level = Logger.Level.Info;
+  } else if (program.opts().verbose >= 1) {
+    logger.level = Logger.Level.Debug;
+  }
+
+  logger.debug(`${path.basename(__filename)} version ${VERSION} PID ${process.pid}`);
+  logger.debug("opts: %O", process.argv);
+
+  return program.opts();
+}
+
+/* eslint-disable @typescript-eslint/no-unused-vars */
+function cliIncreaseVerbosity(value: string /* actually undefined */, previous: number): number {
+  return previous + 1;
+}
+
+// -----------------------------------------------------------------------------
+// lib
 
 /**
  * @returns {string} '2006-01-01'
@@ -306,37 +433,6 @@ async function $x1(
   return (await $xn(page, expression, 1))[0];
 }
 
-class Queue<T> {
-  private readonly q: T[];
-  private readonly qWaiters: { resolve: (value: "resolved") => void }[];
-
-  constructor() {
-    this.q = [];
-    this.qWaiters = [];
-  }
-
-  push(elem: T): number {
-    const ret = this.q.unshift(elem); // XXX: slow; should be real queue
-    this.qWaiters.shift()?.resolve("resolved"); // XXX: slow; should be real queue
-    return ret;
-  }
-
-  async pop(): Promise<T> {
-    const ret = this.q.pop();
-    if (ret !== undefined) {
-      return ret;
-    }
-
-    const p = new Promise((resolve) => {
-      this.qWaiters.push({ resolve });
-    });
-    await p;
-    const ret2 = this.q.pop();
-    if (ret2 === undefined) unreachable();
-    return ret2;
-  }
-}
-
 async function sleep(milliSeconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliSeconds));
 }
@@ -396,103 +492,6 @@ interface Kousu010 {
   version: string;
   projects: { [projectId: string]: ProjectName };
   jissekis: (Kinmu010 & Jisseki010)[];
-}
-
-// -----------------------------------------------------------------------------
-// cli
-
-export const VERSION = "2.1.0";
-
-interface OptsGlobal {
-  ignoreHttps: boolean;
-  maPass: string;
-  maUrl: string;
-  maUser: string;
-  month: [number, number];
-  quiet: boolean;
-  verbose: number;
-  zPptrConnectUrl?: string;
-  zPptrCookieLoad?: string;
-  zPptrCookieSave?: string;
-  zPptrLaunchHandleSigint: boolean;
-  zPptrLaunchHeadless: boolean;
-}
-
-// prettier-ignore
-program
-  .name("kousu")
-  .description("ビーブレイクシステムズMA-EYES（webアプリ版）の作業実績（工数）入力を行う")
-  .version(VERSION)
-  .addOption(new commander.Option("--ignore-https", "HTTPSエラーを無視する").default(false))
-  .addOption(new commander.Option("--ma-pass <pass>", "MA-EYESのパスワード").env("KOUSU_MA_PASS").makeOptionMandatory(true))
-  .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
-  .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
-  .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(cliParseMonth(datePrevMonth(), null), datePrevMonth()).argParser(cliParseMonth))
-  .addOption(new commander.Option("-q, --quiet", "quiet mode").default(false).conflicts("verbose"))
-  .addOption(new commander.Option("-v, --verbose", "print verbose output; -vv to print debug output").default(0).argParser(cliIncreaseVerbosity).conflicts("quiet"))
-  .addOption(new commander.Option("--z-pptr-connect-url <url>").hideHelp().conflicts(["zPptrLaunchHandleSigint", "zPptrLaunchHeadless"]))
-  .addOption(new commander.Option("--z-pptr-cookie-load <path>").hideHelp().conflicts(["zPptrCookieSave"]))
-  .addOption(new commander.Option("--z-pptr-cookie-save <path>").hideHelp().conflicts(["zPptrCookieLoad"]))
-  .addOption(new commander.Option("--no-z-pptr-launch-handle-sigint").hideHelp().conflicts(["zPptrConnectUrl"]))
-  .addOption(new commander.Option("--z-pptr-launch-headless").hideHelp().default(false).conflicts(["zPptrConnectUrl"]))
-  .alias(); // dummy
-
-const cliCommandExitStatus = new Queue<number>();
-
-function cliCommandInit(): OptsGlobal {
-  if (program.opts().quiet === true) {
-    logger.level = Logger.Level.Error;
-  } else if (program.opts().verbose === 0) {
-    logger.level = Logger.Level.Warn;
-  } else if (program.opts().verbose === 1) {
-    logger.level = Logger.Level.Info;
-  } else if (program.opts().verbose >= 1) {
-    logger.level = Logger.Level.Debug;
-  }
-
-  logger.debug(`${path.basename(__filename)} version ${VERSION} PID ${process.pid}`);
-  logger.debug("opts: %O", process.argv);
-
-  return program.opts();
-}
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function cliIncreaseVerbosity(value: string /* actually undefined */, previous: number): number {
-  return previous + 1;
-}
-
-export async function cliMain(): Promise<never> {
-  try {
-    await program.parse(process.argv);
-    const exitStatus = await cliCommandExitStatus.pop();
-    process.exit(exitStatus);
-  } catch (e) {
-    if (e instanceof AppError) {
-      // assert.ok(e.constructor.name === "AppError")
-      process.exit(1);
-    }
-    logger.error(`unexpected error: ${e}`);
-    throw e;
-  }
-  unreachable();
-}
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function cliParseMonth(value: string, previous: unknown): [number, number] {
-  const match = value.match(/^(\d{4})-(\d{2})$/);
-  if (match === null) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value})`);
-  }
-  // XXX: want return [year, month]
-  const year = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-  if (isNaN(year)) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid year)`);
-  }
-  if (isNaN(month)) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid month)`);
-  }
-  return [year, month];
 }
 
 // -----------------------------------------------------------------------------
