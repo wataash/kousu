@@ -60,22 +60,24 @@ export async function cliMain(): Promise<never> {
   unreachable();
 }
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function cliParseMonth(value: string, previous: unknown): [number, number] {
-  const match = value.match(/^(\d{4})-(\d{2})$/);
-  if (match === null) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value})`);
+class CLI {
+  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
+  static parseMonth(value: string, previous: unknown): [number, number] {
+    const match = value.match(/^(\d{4})-(\d{2})$/);
+    if (match === null) {
+      throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value})`);
+    }
+    // XXX: want return [year, month]
+    const year = parseInt(match[1], 10);
+    const month = parseInt(match[2], 10);
+    if (isNaN(year)) {
+      throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid year)`);
+    }
+    if (isNaN(month)) {
+      throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid month)`);
+    }
+    return [year, month];
   }
-  // XXX: want return [year, month]
-  const year = parseInt(match[1], 10);
-  const month = parseInt(match[2], 10);
-  if (isNaN(year)) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid year)`);
-  }
-  if (isNaN(month)) {
-    throw new commander.InvalidArgumentError(`KOUSU_MONTH must be yyyy-mm (given: ${value}; invalid month)`);
-  }
-  return [year, month];
 }
 
 interface OptsGlobal {
@@ -101,7 +103,7 @@ program
   .addOption(new commander.Option("--ma-pass <pass>", "MA-EYESのパスワード").env("KOUSU_MA_PASS").makeOptionMandatory(true))
   .addOption(new commander.Option("--ma-url <url>", "MA-EYESログイン画面のURL").env("KOUSU_MA_URL").makeOptionMandatory(true))
   .addOption(new commander.Option("--ma-user <user>", "MA-EYESのユーザー名").env("KOUSU_MA_USER").makeOptionMandatory(true))
-  .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(cliParseMonth(datePrevMonth(), null), datePrevMonth()).argParser(cliParseMonth))
+  .addOption(new commander.Option("--month <yyyy-mm>", "処理する月 (e.g. 2006-01)").env("KOUSU_MONTH").makeOptionMandatory(true).default(CLI.parseMonth(datePrevMonth(), null), datePrevMonth()).argParser(CLI.parseMonth))
   .addOption(new commander.Option("-q, --quiet", "quiet mode; -q to suppress debug log, -qq to suppress info log, -qqq to suppress warn log, -qqqq to suppress error log").default(0).argParser((_undefined, previous: number) => previous + 1))
   .addOption(new commander.Option("-v, --verbose").argParser(() => logger.warn("-v, --verbose オプションは3.0.0で削除されました")))
   .addOption(new commander.Option("--z-pptr-connect-url <url>").hideHelp().conflicts(["zPptrLaunchHandleSigint", "zPptrLaunchHeadless"]))
