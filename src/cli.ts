@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2021-2025 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
+/* eslint-disable @typescript-eslint/no-explicit-any */
+
 import assert from "assert"; // in babel: replaced with: import assert from "power-assert";
 // not replaced:
 // import * as assert from "assert/strict";
@@ -38,7 +40,8 @@ class AppErrorStack extends Error {}
 export async function cliMain(): Promise<void> {
   try {
     await program.parseAsync(process.argv);
-    process.exitCode = await cliCommandExitStatus.pop();
+    process.exitCode = await cliCommandExitPromise;
+    assert.ok(process.exitCode !== undefined);
     return;
   } catch (e) {
     if (e instanceof AppError) {
@@ -66,7 +69,6 @@ class CLI {
     throw new commander.InvalidArgumentError(errMsg);
   }
 
-  /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   static parseMonth(value: string, previous: unknown): [number, number] {
     const match = value.match(/^(\d{4})-(\d{2})$/);
     if (match === null) {
@@ -76,7 +78,8 @@ class CLI {
   }
 }
 
-interface OptsGlobal {
+// @ts-expect-error initially {}, but assigned later
+const cliOptsGlobal: {
   ignoreHttps: boolean;
   maPass: string;
   maUrl: string;
@@ -88,7 +91,9 @@ interface OptsGlobal {
   zPptrCookieSave?: string;
   zPptrLaunchHandleSigint: boolean;
   zPptrLaunchHeadless: boolean;
-}
+} = {};
+
+let commandNoRun = false;
 
 // prettier-ignore
 program
@@ -107,56 +112,31 @@ program
   .addOption(new commander.Option("--z-pptr-cookie-save <path>").hideHelp().conflicts(["zPptrCookieLoad"]))
   .addOption(new commander.Option("--no-z-pptr-launch-handle-sigint").hideHelp().conflicts(["zPptrConnectUrl"]))
   .addOption(new commander.Option("--z-pptr-launch-headless").hideHelp().default(false).conflicts(["zPptrConnectUrl"]))
-  .alias(); // dummy
-
-class Queue<T> {
-  private readonly q: T[];
-  private readonly qWaiters: { resolve: (value: "resolved") => void }[];
-
-  constructor() {
-    this.q = [];
-    this.qWaiters = [];
-  }
-
-  push(elem: T): number {
-    const ret = this.q.unshift(elem); // XXX: slow; should be real queue
-    this.qWaiters.shift()?.resolve("resolved"); // XXX: slow; should be real queue
-    return ret;
-  }
-
-  async pop(): Promise<T> {
-    const ret = this.q.pop();
-    if (ret !== undefined) {
-      return ret;
+  .hook("preAction", async (thisCommand, actionCommand) => {
+    Object.freeze(Object.assign(cliOptsGlobal, thisCommand.opts()));
+    // prettier-ignore
+    switch (true) {
+      case cliOptsGlobal.quiet === 0: logger.level = Logger.Level.Debug; break;
+      case cliOptsGlobal.quiet === 1: logger.level = Logger.Level.Info; break;
+      case cliOptsGlobal.quiet === 2: logger.level = Logger.Level.Warn; break;
+      case cliOptsGlobal.quiet === 3: logger.level = Logger.Level.Error; break;
+      case cliOptsGlobal.quiet >= 4: logger.level = Logger.Level.Silent; break;
     }
+    logger.debug(`${path.basename(__filename)} version ${VERSION} PID ${process.pid}`, process.argv);
 
-    const p = new Promise((resolve) => {
-      this.qWaiters.push({ resolve });
-    });
-    await p;
-    const ret2 = this.q.pop();
-    if (ret2 === undefined) unreachable();
-    return ret2;
-  }
-}
+    if ("zPptrCookieSave" in cliOptsGlobal) {
+      commandNoRun = true;
+      const [browser, page] = await pptrBrowserPage();
+      await maEyesLogin(page);
+      logger.info("cookie-save done;");
+      await pptrEnd(browser);
+      logger.debug("bye");
+      return cliCommandExit(0);
+    }
+  });
 
-const cliCommandExitStatus = new Queue<number>();
-
-function cliCommandInit(): OptsGlobal {
-  // prettier-ignore
-  switch (true) {
-    case program.opts().quiet === 0: logger.level = Logger.Level.Debug; break;
-    case program.opts().quiet === 1: logger.level = Logger.Level.Info; break;
-    case program.opts().quiet === 2: logger.level = Logger.Level.Warn; break;
-    case program.opts().quiet === 3: logger.level = Logger.Level.Error; break;
-    case program.opts().quiet >= 4: logger.level = Logger.Level.Silent; break;
-  }
-
-  logger.debug(`${path.basename(__filename)} version ${VERSION} PID ${process.pid}`);
-  logger.debug("opts: %O", process.argv);
-
-  return program.opts();
-}
+// const { promise: cliCommandExitPromise, resolve: cliCommandExit }  = Promise.withResolvers<number>();
+const { promise: cliCommandExitPromise, resolve: cliCommandExit } = PromiseWithResolvers<number>();
 
 /*
 NODE_OPTIONS="--enable-source-maps --import @power-assert/node" KOUSU_TEST=1 kousu
@@ -214,23 +194,16 @@ function isObject(value: unknown): value is object {
   return value !== null && typeof value === "object" && Array.isArray(value) === false;
 }
 
-async function maEyesLogin(
-  page: Page,
-  urlLogin: string,
-  user: string,
-  pass: string,
-  pathCookieLoad: string | null,
-  pathCookieSave: string | null,
-): Promise<void> {
-  if (pathCookieLoad !== null) {
-    await pptrCookieLoad(page, pathCookieLoad);
-    logger.debug(`page.goto ${urlLogin}`);
-    await Promise.all([page.waitForNavigation(), page.goto(urlLogin)]);
+async function maEyesLogin(page: Page): Promise<void> {
+  if (cliOptsGlobal.zPptrCookieLoad !== undefined) {
+    await pptrCookieLoad(page, cliOptsGlobal.zPptrCookieLoad);
+    logger.debug(`page.goto ${cliOptsGlobal.maUrl}`);
+    await Promise.all([page.waitForNavigation(), page.goto(cliOptsGlobal.maUrl)]);
     return;
   }
 
-  logger.debug(`page.goto ${urlLogin}`);
-  await Promise.all([page.waitForNavigation(), page.goto(urlLogin)]);
+  logger.debug(`page.goto ${cliOptsGlobal.maUrl}`);
+  await Promise.all([page.waitForNavigation(), page.goto(cliOptsGlobal.maUrl)]);
 
   // .../loginView.xhtml (login)
   // .../workResult.xhtml (already logged in; when using --pptr-connect-url)
@@ -243,17 +216,17 @@ async function maEyesLogin(
     page,
     `//input[@data-p-label="ユーザコード"]`,
   );
-  await page.evaluate((el, user) => (el.value = user), inputUser as unknown as HTMLInputElement, user);
+  await page.evaluate((el, user) => (el.value = user), inputUser as unknown as HTMLInputElement, cliOptsGlobal.maUser);
   const inputPass = await $x1(
     page,
     `//input[@data-p-label="パスワード"]`,
   );
-  await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, pass);
+  await page.evaluate((el, pass) => (el.value = pass), inputPass as unknown as HTMLInputElement, cliOptsGlobal.maPass);
   const button = await $x1(page, `//div[@class="login-actions"]/button`);
   // XXX: 画面拡大率が100%でないと（主に --pptr-connect-url の場合）座標がずれて別のボタンが押される
   await Promise.all([page.waitForNavigation(), (button as unknown as HTMLButtonElement).click()]);
-  if (pathCookieSave !== null) {
-    await pptrCookieSave(page, pathCookieSave);
+  if (cliOptsGlobal.zPptrCookieSave !== undefined) {
+    await pptrCookieSave(page, cliOptsGlobal.zPptrCookieSave);
   }
 }
 
@@ -314,7 +287,7 @@ async function maEyesWaitLoading(page: Page, waitGIFMs = 30_000): Promise<void> 
   await sleep(500); // XXX: 500ms はてきとう
 }
 
-async function maEyesSelectYearMonth(page: Page, year: number, month: number): Promise<void> {
+async function maEyesCalendarSelectYearMonth(page: Page, year: number, month: number): Promise<void> {
   // select year
   {
     const year_ = year.toString();
@@ -340,19 +313,31 @@ async function maEyesSelectYearMonth(page: Page, year: number, month: number): P
   }
 }
 
-async function pptrBrowserPage(
-  ignoreHTTPSErrors: boolean,
-  pptrConnectUrl: string | null,
-  pptrLaunchHandleSIGINT: boolean,
-  pptrLaunchHeadless: boolean,
-): Promise<[Browser, Page]> {
+/**
+ * ES2024 Promise.withResolvers
+ * ref: node_modules/typescript/lib/lib.es2024.promise.d.ts
+ */
+function PromiseWithResolvers<T>(): {
+  promise: Promise<T>;
+  resolve: (value: T | PromiseLike<T>) => void;
+  reject: (reason?: any) => void;
+} {
+  const ret = {} as any;
+  ret.promise = new Promise((resolve, reject) => {
+    ret.resolve = resolve;
+    ret.reject = reject;
+  });
+  return ret;
+}
+
+async function pptrBrowserPage(): Promise<[Browser, Page]> {
   logger.debug("open chromium");
 
   const browser = await (async () => {
-    if (pptrConnectUrl !== null) {
+    if (cliOptsGlobal.zPptrConnectUrl !== undefined) {
       return puppeteer.connect({
         // ConnectOptions
-        browserURL: pptrConnectUrl,
+        browserURL: cliOptsGlobal.zPptrConnectUrl,
         // BrowserOptions
         // @ts-expect-error TODO
         ignoreHTTPSErrors,
@@ -364,9 +349,9 @@ async function pptrBrowserPage(
     }
     return puppeteer.launch({
       // LaunchOptions
-      handleSIGINT: pptrLaunchHandleSIGINT,
+      handleSIGINT: cliOptsGlobal.zPptrLaunchHandleSigint,
       // ChromeArgOptions
-      headless: pptrLaunchHeadless,
+      headless: cliOptsGlobal.zPptrLaunchHeadless,
       // https://peter.sh/experiments/chromium-command-line-switches/
       // opts: ["--window-position=20,20", "--window-size=1400,800"],
       // devtools: true,
@@ -389,11 +374,11 @@ async function pptrBrowserPage(
   return [browser, page];
 }
 
-async function pptrClose(browser: Browser, disconnect: boolean): Promise<void> {
-  if (disconnect) {
-    browser.disconnect();
-  } else {
+async function pptrEnd(browser: Browser): Promise<void> {
+  if (cliOptsGlobal.zPptrConnectUrl === undefined) {
     browser.close();
+  } else {
+    browser.disconnect();
   }
 }
 
@@ -541,34 +526,13 @@ interface Kousu010 {
 program
   .command("import-kinmu")
   .description("MA-EYESにログインして「勤務時間取込」「保存」を行う")
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  .action(async (opts: {}) => {
-  const optsGlobal = cliCommandInit();
+  .action(importKinmu);
 
-  const [browser, page] = await pptrBrowserPage(
-    optsGlobal.ignoreHttps,
-    optsGlobal.zPptrConnectUrl || null,
-    optsGlobal.zPptrLaunchHandleSigint,
-    optsGlobal.zPptrLaunchHeadless
-  );
-
-  await maEyesLogin(
-    page,
-    optsGlobal.maUrl,
-    optsGlobal.maUser,
-    optsGlobal.maPass,
-    optsGlobal.zPptrCookieLoad || null,
-    optsGlobal.zPptrCookieSave || null
-  );
-  if ("zPptrCookieSave" in optsGlobal) {
-    logger.info("cookie-save done;");
-    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-    logger.debug("bye");
-    cliCommandExitStatus.push(0);
-  }
-
-  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+async function importKinmu(opts: {}): Promise<void> {
+  if (commandNoRun) return;
+  const [browser, page] = await pptrBrowserPage();
+  await maEyesLogin(page);
+  await maEyesCalendarSelectYearMonth(page, cliOptsGlobal.month[0], cliOptsGlobal.month[1]);
 
   // <table class="ui-datepicker-calendar">
   // $x("//table[@class=\"ui-datepicker-calendar\"]/tbody/tr")
@@ -643,10 +607,10 @@ program
     logger.debug("next");
   }
 
-  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  await pptrEnd(browser);
   logger.debug("bye");
-  cliCommandExitStatus.push(0);
-});
+  return cliCommandExit(0);
+}
 
 // -----------------------------------------------------------------------------
 // command - get
@@ -709,9 +673,10 @@ program
   .addOption(new commander.Option("-o, --out-json <path>", "JSONの出力パス"))
   // .addArgument(new commander.Argument("<file>", "JSONの出力パス"))
   .allowExcessArguments(true)
-  .action(async (opts: { outJson?: string }, command: commander.Command) => {
-  const optsGlobal = cliCommandInit();
+  .action(get);
 
+async function get(opts: { outJson?: string }, command: commander.Command): Promise<void> {
+  if (commandNoRun) return;
   if (command.args.length === 1) {
     if (opts.outJson !== undefined) {
       throw new AppError(`-o ${opts.outJson} ${command.args[0]} は両方同時に指定できません; -o のみ指定することを推奨します`);
@@ -725,29 +690,9 @@ program
     throw new AppError(`-o, --out-json <path> が必要です`);
   }
 
-  const [browser, page] = await pptrBrowserPage(
-    optsGlobal.ignoreHttps,
-    optsGlobal.zPptrConnectUrl || null,
-    optsGlobal.zPptrLaunchHandleSigint,
-    optsGlobal.zPptrLaunchHeadless
-  );
-
-  await maEyesLogin(
-    page,
-    optsGlobal.maUrl,
-    optsGlobal.maUser,
-    optsGlobal.maPass,
-    optsGlobal.zPptrCookieLoad || null,
-    optsGlobal.zPptrCookieSave || null
-  );
-  if ("zPptrCookieSave" in optsGlobal) {
-    logger.info("cookie-save done;");
-    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-    logger.debug("bye");
-    cliCommandExitStatus.push(0);
-  }
-
-  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+  const [browser, page] = await pptrBrowserPage();
+  await maEyesLogin(page);
+  await maEyesCalendarSelectYearMonth(page, cliOptsGlobal.month[0], cliOptsGlobal.month[1]);
 
   // [{
   //   date: "7/27(月)";
@@ -838,18 +783,16 @@ program
   }
   `;
 
-  fs.writeFileSync(file, json);
-  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  fs.writeFileSync(opts.outJson, json);
+  await pptrEnd(browser);
   logger.debug("bye");
-  cliCommandExitStatus.push(0);
-});
+  return cliCommandExit(0);
+}
 
 // 勤務表パース
 function parseWeekKinmu(html: string): (Kinmu | null)[] {
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
     // TODO:
@@ -1031,8 +974,6 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
 
   // TS2322
   // const x = (expression: string, node: any): ReturnType<typeof xpath.select> => {
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x = (expression: string, node: any): xpath.SelectedValue[] => {
     // logger.debug(`xpath.select(\`${expression}\`)`);
     // TODO:
@@ -1041,15 +982,11 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
     return xpath.select(expression, node);
   };
 
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const x1 = (expression: string, node: any): ReturnType<typeof xpath.select1> => {
     logger.debug(`xpath.select1(\`${expression}\`)`);
     return xpath.select1(expression, node);
   };
 
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const assertText = (expression: string, node: any, data: string) => {
     const node2 = x1(expression, node) as Text;
     assert.ok(node2 !== undefined && node2.data === data);
@@ -1268,10 +1205,10 @@ program
   .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(() => CLI.invalidArgument("--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました")))
   .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(() => CLI.invalidArgument("--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました")))
   .argument("<file>", "入力するJSONのパス")
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  .action(async (file: string, opts: {}) => {
-  const optsGlobal = cliCommandInit();
+  .action(put);
+
+async function put(file: string, opts: {}): Promise<void> {
+  if (commandNoRun) return;
 
   let  compat: "0.1.0" | null = null;
 
@@ -1304,29 +1241,10 @@ program
       return acc;
     }, {} as { [date: string]: typeof kousu.jissekis[number] });
   })();
-  const [browser, page] = await pptrBrowserPage(
-    optsGlobal.ignoreHttps,
-    optsGlobal.zPptrConnectUrl || null,
-    optsGlobal.zPptrLaunchHandleSigint,
-    optsGlobal.zPptrLaunchHeadless
-  );
 
-  await maEyesLogin(
-    page,
-    optsGlobal.maUrl,
-    optsGlobal.maUser,
-    optsGlobal.maPass,
-    optsGlobal.zPptrCookieLoad || null,
-    optsGlobal.zPptrCookieSave || null
-  );
-  if ("zPptrCookieSave" in optsGlobal) {
-    logger.info("cookie-save done;");
-    await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
-    logger.debug("bye");
-    cliCommandExitStatus.push(0);
-  }
-
-  await maEyesSelectYearMonth(page, optsGlobal.month[0], optsGlobal.month[1]);
+  const [browser, page] = await pptrBrowserPage();
+  await maEyesLogin(page);
+  await maEyesCalendarSelectYearMonth(page, cliOptsGlobal.month[0], cliOptsGlobal.month[1]);
 
   const elemsCalendarDate = await $x(page, `//table[@class="ui-datepicker-calendar"]/tbody/tr/td`);
   for (let i = 0; i < elemsCalendarDate.length; i++) {
@@ -1433,7 +1351,7 @@ program
     "breakpoint".match(/breakpoint/);
   }
 
-  await pptrClose(browser, optsGlobal.zPptrConnectUrl !== undefined);
+  await pptrEnd(browser);
   logger.debug("bye");
-  cliCommandExitStatus.push(0);
-});
+  return cliCommandExit(0);
+}
