@@ -651,17 +651,79 @@ program
 // -----------------------------------------------------------------------------
 // command - get
 
+if (process.env.KOUSU_TEST) {
+  const { KOUSU_TEST, KOUSU_MA_URL, KOUSU_MA_USER, KOUSU_MA_PASS, ...env } = process.env;
+  let r; // result of child_process.spawnSync()
+  let out, err; // previous stdout, stderr
+
+  r = child_process.spawnSync(`kousu get`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, /^error: required option '--ma-pass <pass>' not specified(\r?\n)$/);
+  [out, err] = [r.stdout, r.stderr];
+
+  env.KOUSU_MA_URL = "https://example.com";
+  env.KOUSU_MA_USER = "user";
+  env.KOUSU_MA_PASS = "pass";
+
+  r = child_process.spawnSync(`kousu get`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, / -o, --out-json <path> が必要です(\r?\n)$/);
+  [out, err] = [r.stdout, r.stderr];
+
+  // r = child_process.spawnSync(`kousu get kousu.json`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+
+  r = child_process.spawnSync(`kousu get kousu.json arg2`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, / too many arguments: kousu.json arg2(\r?\n)$/);
+  [out, err] = [r.stdout, r.stderr];
+
+  r = child_process.spawnSync(`kousu get -o`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.ok(r.stderr === `error: option '-o, --out-json <path>' argument missing\n`);
+  [out, err] = [r.stdout, r.stderr];
+
+  // r = child_process.spawnSync(`kousu get -o kousu.json`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+
+  r = child_process.spawnSync(`kousu get -o kousu.json arg1`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, / -o kousu.json arg1 は両方同時に指定できません; -o のみ指定することを推奨します(\r?\n)$/);
+  [out, err] = [r.stdout, r.stderr];
+
+  r = child_process.spawnSync(`kousu get -o kousu.json arg1 arg2`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.match(r.stderr, / too many arguments: arg1 arg2(\r?\n)$/);
+  [out, err] = [r.stdout, r.stderr];
+
+  r = child_process.spawnSync(`kousu get --out-csv=/dev/null`, { encoding: "utf8", env, shell: true, stdio: "pipe" });
+  assert.ok(r.signal === null && !("error" in r) && r.status === 1 && r.stdout === "" && r.stderr !== "");
+  assert.ok(r.stderr === `error: option '--out-csv <path>' argument '/dev/null' is invalid. --out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました\n`);
+  [out, err] = [r.stdout, r.stderr];
+}
+
 // prettier-ignore
 program
   .command("get")
   .description("MA-EYESにログインして工数実績を取得する")
   .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(() => CLI.invalidArgument("--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました")))
-  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(() => CLI.invalidArgument("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました")))
-  .argument("<file>", "JSONの出力パス")
-  // TODO:
-  // eslint-disable-next-line @typescript-eslint/ban-types
-  .action(async (file: string, opts: {}) => {
+  // .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(() => CLI.invalidArgument("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました")))
+  .addOption(new commander.Option("-o, --out-json <path>", "JSONの出力パス"))
+  // .addArgument(new commander.Argument("<file>", "JSONの出力パス"))
+  .allowExcessArguments(true)
+  .action(async (opts: { outJson?: string }, command: commander.Command) => {
     const optsGlobal = cliCommandInit();
+
+    if (command.args.length === 1) {
+      if (opts.outJson !== undefined) {
+        throw new AppError(`-o ${opts.outJson} ${command.args[0]} は両方同時に指定できません; -o のみ指定することを推奨します`);
+      }
+      opts.outJson = command.args[0];
+    }
+    if (command.args.length > 1) {
+      throw new AppError(`too many arguments: ${command.args.join(" ")}`);
+    }
+    if (opts.outJson === undefined) {
+      throw new AppError(`-o, --out-json <path> が必要です`);
+    }
 
     const [browser, page] = await pptrBrowserPage(
       optsGlobal.ignoreHttps,
