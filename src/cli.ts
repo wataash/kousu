@@ -61,6 +61,10 @@ export async function cliMain(): Promise<never> {
 }
 
 class CLI {
+  static invalidArgument(errMsg: string): never {
+    throw new commander.InvalidArgumentError(errMsg);
+  }
+
   /* eslint-disable-next-line @typescript-eslint/no-unused-vars */
   static parseMonth(value: string, previous: unknown): [number, number] {
     const match = value.match(/^(\d{4})-(\d{2})$/);
@@ -532,18 +536,6 @@ interface Kousu010 {
 // -----------------------------------------------------------------------------
 // command - import-kinmu
 
-function errorOutCsv(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました",
-  );
-}
-
-function errorOutJson(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました",
-  );
-}
-
 // prettier-ignore
 program
   .command("import-kinmu")
@@ -662,8 +654,8 @@ program
 program
   .command("get")
   .description("MA-EYESにログインして工数実績を取得する")
-  .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(errorOutCsv))
-  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(errorOutJson))
+  .addOption(new commander.Option("--out-csv <path>").env("KOUSU_OUT_CSV").hideHelp().argParser(() => CLI.invalidArgument("--out-csv (KOUSU_OUT_CSV) は 0.2.0 で削除され、--out-json のみサポートになりました")))
+  .addOption(new commander.Option("--out-json <path>").env("KOUSU_OUT_JSON").hideHelp().argParser(() => CLI.invalidArgument("--out-json (KOUSU_OUT_JSON) は 0.3.0 で削除され、非オプション引数になりました")))
   .argument("<file>", "JSONの出力パス")
   // TODO:
   // eslint-disable-next-line @typescript-eslint/ban-types
@@ -1206,26 +1198,12 @@ function parseWeekJisseki(html: string): [Jisseki[], { [projectId: string]: Proj
 // -----------------------------------------------------------------------------
 // command - put
 
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function errorInCsv(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました",
-  );
-}
-
-/* eslint-disable @typescript-eslint/no-unused-vars */
-function errorInJson(value: string /* actually undefined */, previous: undefined): never {
-  throw new commander.InvalidArgumentError(
-    "--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました",
-  );
-}
-
 // prettier-ignore
 program
   .command("put")
   .description("MA-EYESにログインして工数実績を入力する")
-  .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(errorInCsv))
-  .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(errorInJson))
+  .addOption(new commander.Option("--in-csv <path>").env("KOUSU_IN_CSV").hideHelp().argParser(() => CLI.invalidArgument("--in-csv (KOUSU_IN_CSV) は 0.2.0 で削除され、--in-json のみサポートになりました")))
+  .addOption(new commander.Option("--in-json <path>").env("KOUSU_IN_JSON").hideHelp().argParser(() => CLI.invalidArgument("--in-json (KOUSU_IN_JSON) は 0.3.0 で削除され、非オプション引数になりました")))
   .argument("<file>", "入力するJSONのパス")
   // TODO:
   // eslint-disable-next-line @typescript-eslint/ban-types
