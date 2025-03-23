@@ -5,8 +5,8 @@
 import esMain from "es-main";
 
 // API
-export type { Jisseki, Kinmu, Kousu, ProjectName } from "./cli.js";
-export { VERSION } from "./cli.js";
+export type { Date, ProjectName, ProjectID, Kousu } from "./cli.js";
+export { VERSION, kousuLoadJSON } from "./cli.js";
 
 import { cliMain } from "./cli.js";
 

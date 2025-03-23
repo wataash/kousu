@@ -1,6 +1,8 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2025 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
 
+/* eslint-disable no-constant-condition */
+
 import assert from "assert"; // in babel: replaced with: import assert from "power-assert";
 
 import * as path from "node:path";
