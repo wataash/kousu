@@ -1,7 +1,6 @@
 // SPDX-FileCopyrightText: Copyright (c) 2022-2025 Wataru Ashihara <wataash0607@gmail.com>
 // SPDX-License-Identifier: Apache-2.0
-
-/* eslint-disable no-constant-condition */
+// based on https://github.com/wataash/scraps/blob/master/logger.ts
 
 import assert from "assert"; // in babel: replaced with: import assert from "power-assert";
 
@@ -119,6 +118,7 @@ tsx logger.tsx
   }
 }
 
+// eslint-disable-next-line no-constant-condition
 if (0) {
   const logger = new Logger();
   assert.ok(logger.level === Logger.Level.Debug);

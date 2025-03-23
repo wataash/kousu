@@ -495,6 +495,7 @@ async function sleep(milliSeconds: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, milliSeconds));
 }
 
+// ref: https://github.com/tj/commander.js/blob/v12.1.0/lib/command.js
 function strNodeOptionsRemoveInspect(arg: string): string {
   // Remove:
   //  --inspect[=[host:]port]
