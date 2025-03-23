@@ -31,7 +31,7 @@ import { Logger } from "./logger.js";
 const __filename = url.fileURLToPath(import.meta.url);
 const logger = new Logger();
 const program = new commander.Command();
-export const VERSION = "3.0.0";
+export const VERSION = "3.0.1";
 
 class AppError extends Error {}
 
