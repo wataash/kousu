@@ -51,6 +51,6 @@
     "node": ">=18"
   },
   "prettier": {
-    "printWidth": 120
+    "printWidth": 999
   }
 }
