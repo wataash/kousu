@@ -1,5 +1,5 @@
+*.json
 /dist/
 /node_modules/
 kousu.csv
-kousu.json
 ma.cookie
