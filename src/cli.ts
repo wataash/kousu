@@ -944,8 +944,8 @@ async function get(opts: { outJson?: string }, command: commander.Command): Prom
     if (!(await maEyesCalendarSelectWeek(page, iWeek))) {
       continue;
     }
-    const works1 = await parseWeekKinmu(page);
-    const [projects, works2] = await parseWeekJisseki(page);
+    const works1 = await parseWeek2(page);
+    const [projects, works2] = await parseWeek1(page);
     if (works1.length !== 7) {
       logger.error(`勤務時間表の形式が不正です: works1.length (${works1.length}) !== 7`);
     }
@@ -995,7 +995,7 @@ async function get(opts: { outJson?: string }, command: commander.Command): Prom
 
 // 勤務表パース
 // Omit<Kousu["works"], "hours"
-async function parseWeekKinmu(page: Page): Promise<(Omit<Kousu["works"][0], "sagyou" | "fumei" | "hours"> | null)[]> {
+async function parseWeek2(page: Page): Promise<(Omit<Kousu["works"][0], "sagyou" | "fumei" | "hours"> | null)[]> {
   const trs = await page.$$(`table#workResultView\\:j_idt69 tr`);
   assert.ok(trs.length === 6, `table#workResultView\\:j_idt69 tr: expected 6 trs (date 出社 退社 翌日 休憩 休み)`);
 
@@ -1136,7 +1136,7 @@ async function parseWeekKinmu(page: Page): Promise<(Omit<Kousu["works"][0], "sag
 }
 
 // 工数実績入力表パース
-async function parseWeekJisseki(page: Page): Promise<[Kousu["projects"], Pick<Kousu["works"][0], "sagyou" | "fumei" | "hours">[]]> {
+async function parseWeek1(page: Page): Promise<[Kousu["projects"], Pick<Kousu["works"][0], "sagyou" | "fumei" | "hours">[]]> {
   const projects = {} as Kousu["projects"];
   const works2 = [] as Pick<Kousu["works"][0], "sagyou" | "fumei" | "hours">[];
 
